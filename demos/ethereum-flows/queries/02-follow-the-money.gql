@@ -3,7 +3,7 @@
 -- Replace the literal with any address from query 01. This is the query to run
 -- in Kineviz rather than the CLI: whether value fans out to many recipients or
 -- funnels into a few is obvious in the picture and invisible in a table.
-GRAPH `${PROJECT}.${DATASET}.${GRAPH}`
+GRAPH `${GCP_PROJECT}.${BQ_DATASET}.${BQ_GRAPH}`
 MATCH p = (root:Address WHERE root.address = '0x0000000000000000000000000000000000000000')
           -[:SENT]->{1,2}(:Address)
 RETURN p

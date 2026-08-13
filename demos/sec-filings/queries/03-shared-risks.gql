@@ -3,7 +3,7 @@
 -- A risk one company names is that company's problem. A risk everyone names is
 -- a sector condition — and the ones sitting in between are where the useful
 -- questions are.
-GRAPH `${PROJECT}.${DATASET}.${GRAPH}`
+GRAPH `${GCP_PROJECT}.${BQ_DATASET}.${BQ_GRAPH}`
 MATCH (c:Company)-[:FACING]->(r:Risk)
 RETURN
   r.id                   AS risk,

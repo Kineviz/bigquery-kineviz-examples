@@ -3,7 +3,7 @@
 -- The top of this list is almost always exchanges, bridges, and mixers rather
 -- than individuals. That is the useful baseline: know your hubs before you read
 -- anything into a path that runs through one.
-GRAPH `${PROJECT}.${DATASET}.${GRAPH}`
+GRAPH `${GCP_PROJECT}.${BQ_DATASET}.${BQ_GRAPH}`
 MATCH (sender:Address)-[s:SENT]->(hub:Address)
 RETURN
   hub.address              AS hub,

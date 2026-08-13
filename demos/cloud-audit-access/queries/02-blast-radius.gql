@@ -3,7 +3,7 @@
 -- Swap the name for anyone from query 01. Run this in Kineviz rather than the
 -- CLI: "how far does this account actually reach" is a shape, and the answer to
 -- "should we offboard this contractor first" is usually obvious on sight.
-GRAPH `${PROJECT}.${DATASET}.${GRAPH}`
+GRAPH `${GCP_PROJECT}.${BQ_DATASET}.${BQ_GRAPH}`
 MATCH p = (start:Principal WHERE start.name = 'contractor-priya@partner.example')
           (-[:CAN_IMPERSONATE]->(:Principal)){0,2}
           -[:ACCESSED]->(:Resource)

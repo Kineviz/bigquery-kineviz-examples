@@ -2,7 +2,7 @@
 --
 -- High value from few wallets is a different story than modest value from
 -- thousands — the first looks like treasury movement, the second like a product.
-GRAPH `${PROJECT}.${DATASET}.${GRAPH}`
+GRAPH `${GCP_PROJECT}.${BQ_DATASET}.${BQ_GRAPH}`
 MATCH (w:Address)-[c:CALLED]->(k:Contract)
 RETURN
   k.address             AS contract,

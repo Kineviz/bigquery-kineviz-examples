@@ -38,7 +38,7 @@ cat <<EOF
 
      Run 2 and 4 in Kineviz rather than the CLI — the shape is the finding.
 
-   Cost so far: ~\$3 for ${SEC_TICKERS}.  Tear down with:  ./gxr down sec-filings
+   Cost so far: ~\$3.00 for ${SEC_TICKERS}.  Tear down with:  ./gxr down sec-filings
    Teardown removes the dataset AND the staged GCS objects — worth running.
 
 EOF

@@ -220,7 +220,7 @@ Usually `roles/bigquery.jobUser` is missing — listing datasets requires runnin
 An account is required, and it's free for individual use.
 [Sign up](https://www.kineviz.com/), then sign in.
 
-**Still stuck?** [Open an issue](../../../issues/new?template=demo-bug.yml) with the error and
+**Still stuck?** [Open an issue](https://github.com/Kineviz/bigquery-kineviz-examples/issues/new?template=demo-bug.yml) with the error and
 your Desktop version. Please redact project IDs and never paste a key.
 
 ---

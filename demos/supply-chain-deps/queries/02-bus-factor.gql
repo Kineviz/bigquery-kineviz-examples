@@ -2,7 +2,7 @@
 --
 -- The pairing is the point: heavy fan-in AND a low-activity project is where
 -- supply-chain risk actually concentrates. Either signal alone says little.
-GRAPH `${PROJECT}.${DATASET}.${GRAPH}`
+GRAPH `${GCP_PROJECT}.${BQ_DATASET}.${BQ_GRAPH}`
 MATCH (dependent:Package)-[:DEPENDS_ON]->(p:Package)-[:MAINTAINED_IN]->(proj:Project)
 WHERE proj.stars < 500
 RETURN

@@ -3,7 +3,7 @@
 -- Change the literal to any package from query 01. This is the query to run in
 -- Kineviz rather than a table — the shape of the blast radius is the finding,
 -- and it is much easier to see than to read.
-GRAPH `${PROJECT}.${DATASET}.${GRAPH}`
+GRAPH `${GCP_PROJECT}.${BQ_DATASET}.${BQ_GRAPH}`
 MATCH p = (root:Package WHERE root.name = 'lodash')<-[:DEPENDS_ON]-{1,3}(dependent:Package)
 RETURN p
 LIMIT 500

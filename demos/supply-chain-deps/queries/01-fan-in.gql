@@ -3,7 +3,7 @@
 -- High fan-in is not itself a problem — it is what a healthy shared library
 -- looks like. It is the starting point: these are the packages where a
 -- compromise propagates furthest.
-GRAPH `${PROJECT}.${DATASET}.${GRAPH}`
+GRAPH `${GCP_PROJECT}.${BQ_DATASET}.${BQ_GRAPH}`
 MATCH (dependent:Package)-[:DEPENDS_ON]->(p:Package)
 RETURN p.name AS package, COUNT(DISTINCT dependent.id) AS dependents
 ORDER BY dependents DESC

@@ -3,7 +3,7 @@
 -- This is the finding a spreadsheet cannot produce. Revoking one grant feels
 -- like remediation; if a second path exists, nothing changed. Count the routes
 -- before you close the ticket.
-GRAPH `${PROJECT}.${DATASET}.${GRAPH}`
+GRAPH `${GCP_PROJECT}.${BQ_DATASET}.${BQ_GRAPH}`
 MATCH (actor:Principal)-[:CAN_IMPERSONATE]->(proxy:Principal)-[:ACCESSED]->(r:Resource)
 WHERE r.sensitivity IN ('high', 'critical')
 RETURN

@@ -3,7 +3,7 @@
 -- Extracted from 10-K prose by Gemini, so this is what companies *tell
 -- regulators* they are doing — a different and often earlier signal than what
 -- they tell the press.
-GRAPH `${PROJECT}.${DATASET}.${GRAPH}`
+GRAPH `${GCP_PROJECT}.${BQ_DATASET}.${BQ_GRAPH}`
 MATCH (c:Company)-[:ENTERING]->(m:Market)
 RETURN c.id AS company, m.id AS market, m.evidence AS evidence
 ORDER BY company, market

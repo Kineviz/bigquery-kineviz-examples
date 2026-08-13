@@ -1,7 +1,7 @@
 # Queries
 
 One question per file. Run them in Kineviz's query panel, or with `bq` — the
-`${PROJECT}` / `${DATASET}` / `${GRAPH}` placeholders come from your `.env`.
+`${GCP_PROJECT}` / `${BQ_DATASET}` / `${BQ_GRAPH}` placeholders come from your `.env`.
 
 | File | The question it answers |
 |---|---|
@@ -32,3 +32,11 @@ The label set is defined by the upstream pipeline in
 [Kineviz/fortune500](https://github.com/Kineviz/fortune500). If a query above
 returns nothing, check the labels that pipeline actually produced at the pinned
 commit — they may have changed.
+
+## Why these use `${GCP_PROJECT}` and not `${PROJECT}`
+
+The files in `sql/` are rendered by `scripts/setup.sh`, which supplies its own
+placeholder names. These query files are rendered by **your shell**, via
+`envsubst`, so their placeholders have to match the variable names in `.env`
+exactly — otherwise `envsubst` substitutes empty strings and you get
+``GRAPH `..` `` with no error.

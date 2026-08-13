@@ -1,7 +1,7 @@
 # Queries
 
 One question per file. Run them in Kineviz's query panel, or with `bq` — the
-`${PROJECT}` / `${DATASET}` / `${GRAPH}` placeholders come from your `.env`.
+`${GCP_PROJECT}` / `${BQ_DATASET}` / `${BQ_GRAPH}` placeholders come from your `.env`.
 
 | File | The question it answers |
 |---|---|
@@ -24,3 +24,11 @@ shape of the result is the finding.
 **Start with `01`.** It gives you the addresses to paste into `02`, and it tells
 you which hubs are just exchanges so you do not over-read a path that runs
 through one.
+
+## Why these use `${GCP_PROJECT}` and not `${PROJECT}`
+
+The files in `sql/` are rendered by `scripts/setup.sh`, which supplies its own
+placeholder names. These query files are rendered by **your shell**, via
+`envsubst`, so their placeholders have to match the variable names in `.env`
+exactly — otherwise `envsubst` substitutes empty strings and you get
+``GRAPH `..` `` with no error.

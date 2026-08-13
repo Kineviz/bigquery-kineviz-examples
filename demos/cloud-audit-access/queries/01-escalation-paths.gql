@@ -3,7 +3,7 @@
 -- Principals that touch nothing sensitive directly, but reach it by
 -- impersonating something that can. An access review built on direct grants
 -- shows these people as harmless. The graph shows otherwise.
-GRAPH `${PROJECT}.${DATASET}.${GRAPH}`
+GRAPH `${GCP_PROJECT}.${BQ_DATASET}.${BQ_GRAPH}`
 MATCH (actor:Principal)-[:CAN_IMPERSONATE]->(proxy:Principal)-[a:ACCESSED]->(r:Resource)
 WHERE r.sensitivity IN ('high', 'critical')
   AND NOT EXISTS {

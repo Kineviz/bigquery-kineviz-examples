@@ -3,7 +3,7 @@
 -- A pass-through wallet holds nothing: what comes in goes straight out. One is
 -- unremarkable. A chain of them is the shape money-laundering typologies look
 -- for, and it is much easier to see than to tabulate.
-GRAPH `${PROJECT}.${DATASET}.${GRAPH}`
+GRAPH `${GCP_PROJECT}.${BQ_DATASET}.${BQ_GRAPH}`
 MATCH (upstream:Address)-[in_edge:SENT]->(mid:Address)-[out_edge:SENT]->(downstream:Address)
 WHERE upstream.id <> downstream.id
   AND in_edge.total_eth > 1

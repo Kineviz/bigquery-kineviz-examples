@@ -64,7 +64,7 @@ catch that.
 
 ## Getting help
 
-[Open an issue](../../../issues/new?template=demo-bug.yml) with the demo name, the step, the
+[Open an issue](https://github.com/Kineviz/bigquery-kineviz-examples/issues/new?template=demo-bug.yml) with the demo name, the step, the
 full error including its `REMEDIATION:` line, and your versions.
 
 **Redact project IDs, and never paste a service account key.** If a key has been exposed,
