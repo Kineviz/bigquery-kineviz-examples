@@ -27,7 +27,8 @@ cost:
   bounded_by: >
     SEC_TICKERS defaults to 3 companies rather than the full Fortune 500; Gemini
     extraction is the dominant cost and scales linearly with ticker count, so the
-    ceiling is the ticker list, not a byte limit
+    ceiling is the ticker list, not a byte limit. Run end to end with 1 ticker on
+    2026-08-13; the per-company figure is still an estimate, not a measurement.
   billable_resources: [bigquery-dataset, bigquery-table, gcs-objects, vertex-ai-calls]
 
 inputs:

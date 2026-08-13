@@ -17,7 +17,7 @@ out=$(bq --project_id="$GCP_PROJECT" query \
         --maximum_bytes_billed="$MAX_BYTES_BILLED" \
         "GRAPH \`$GCP_PROJECT.$BQ_DATASET.$BQ_GRAPH\`
          MATCH (c:Company)-[:ENTERING]->(m:Market)
-         RETURN c.id AS company, m.id AS market
+         RETURN c.id AS company, m.label AS market, m.market_action AS action
          LIMIT 10" 2>&1) || {
   # bq writes query errors to stdout, not stderr, so capture both streams.
   e=$(printf '%s' "$out" | tr '\n' ' ')

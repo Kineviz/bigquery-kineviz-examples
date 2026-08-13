@@ -49,7 +49,16 @@ if [ -f "$WORK/requirements.txt" ]; then
   . "$WORK/.venv/bin/activate"
   pip install -q -r "$WORK/requirements.txt" \
     || die "Could not install upstream dependencies." "See $WORK/requirements.txt"
-  ok "dependencies installed"
+
+  # Upstream's requirements.txt lists pandas, requests, thefuzz, tqdm and
+  # markdownify, but its BigQuery stage imports google.cloud.bigquery and
+  # google.api_core. A clean checkout therefore dies with ModuleNotFoundError
+  # partway through, after the scrape and the GCS upload have already run.
+  # Install them here rather than let that happen. Reported upstream.
+  pip install -q google-cloud-bigquery google-api-core \
+    || die "Could not install google-cloud-bigquery." \
+           "Install it manually into $WORK/.venv and re-run."
+  ok "dependencies installed (plus google-cloud-bigquery, which upstream omits)"
 fi
 
 [ -x "$WORK/00_run_full_pipeline.sh" ] || chmod +x "$WORK/00_run_full_pipeline.sh" 2>/dev/null || true
@@ -59,11 +68,28 @@ fi
 warn "This step calls Gemini and will bill your project (~\$1 per company)."
 info "processing: $SEC_TICKERS"
 
+# Two things about GCS_BUCKET, both learned by running this:
+#
+#   * The upstream pipeline expects a full gs:// URI (its own default is
+#     gs://kineviz-fortune500-data). Passing a bare bucket name makes
+#     `gcloud storage cp` fail with "Destination URL must name an existing
+#     directory" after the scrape and extraction have already run.
+#   * It writes to ${GCS_BUCKET}/json/. Pointing it at the bucket root would
+#     scatter objects there and leave teardown unable to clean up without
+#     touching things it does not own.
+#
+# So .env holds a bare bucket name, and we hand upstream a prefixed URI. Every
+# object it writes then lands under gs://<bucket>/kineviz-sec-demo/, which is
+# exactly what teardown removes.
+UPSTREAM_GCS="gs://${GCS_BUCKET}/kineviz-sec-demo"
+info "staging to $UPSTREAM_GCS"
+
 (
   cd "$WORK"
   GCP_PROJECT="$GCP_PROJECT" \
   BQ_DATASET="$BQ_DATASET" \
-  GCS_BUCKET="$GCS_BUCKET" \
+  BQ_LOCATION="$BQ_LOCATION" \
+  GCS_BUCKET="$UPSTREAM_GCS" \
   GEMINI_MODEL="$GEMINI_MODEL" \
   ./00_run_full_pipeline.sh "$SEC_TICKERS"
 ) || die "The upstream pipeline failed." \

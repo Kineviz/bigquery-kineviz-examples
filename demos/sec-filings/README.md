@@ -33,6 +33,11 @@ scale. It's also the most expensive one here, so read *At a glance* before runni
 > and scales linearly with company count. The default is three. The full Fortune 500 is
 > roughly 170× that — change it deliberately. Preflight prints the count and warns above ten.
 
+> **Verified end to end on 2026-08-13** with `SEC_TICKERS=AAPL`: scrape → parse → GCS →
+> BigQuery → Gemini extraction → property graph → GQL, then a clean teardown. Three upstream
+> integration issues had to be handled and are described under *Prerequisites* and
+> *Troubleshooting* below.
+
 > **This demo wraps [`Kineviz/fortune500`](https://github.com/Kineviz/fortune500)** rather
 > than forking it. That repo already does the scraping, parsing, and extraction; duplicating
 > it here would mean two copies drifting apart. What this repo adds is what fortune500
@@ -79,8 +84,15 @@ they pass — each one, if missed, otherwise fails deep into a paid run.
    - `roles/storage.objectAdmin` — staging extracted JSON
 4. **Three APIs enabled**: `bigquery.googleapis.com`, `aiplatform.googleapis.com`,
    `storage.googleapis.com`.
-5. **A GCS bucket** you can write to. The demo stages under `kineviz-sec-demo/` and teardown
-   removes only that prefix.
+5. **A GCS bucket** you can write to. Put the **bare name** in `.env` — no `gs://`.
+
+   `setup.sh` hands the upstream pipeline `gs://<bucket>/kineviz-sec-demo`, for two reasons
+   found by running it: the pipeline expects a full `gs://` URI (a bare name fails with
+   *"Destination URL must name an existing directory"* only *after* the scrape and upload
+   have run), and it writes to `${GCS_BUCKET}/json/`. Pointing it at the bucket root would
+   scatter objects there and make teardown unable to clean up without deleting things it does
+   not own. Verified: teardown removed our prefix and left a pre-existing `json/` directory in
+   the same bucket untouched.
 6. **A BigQuery connection named `vertex_ai_connection`** in your location, whose service
    account holds `roles/aiplatform.user`:
 
@@ -231,6 +243,16 @@ includes the exact `bq mk --connection` and IAM commands.
 
 Re-run `./scripts/setup.sh` — it's safe to repeat, and the upstream pipeline checkpoints
 already-processed filings rather than redoing them.
+
+**`ModuleNotFoundError: No module named 'google'`**
+
+Upstream's `requirements.txt` does not declare `google-cloud-bigquery`. `setup.sh` installs it
+for you; you will only see this if you ran the pipeline by hand.
+
+**`Destination URL must name an existing directory`**
+
+`GCS_BUCKET` reached the pipeline without a `gs://` prefix. Keep the bare name in `.env` and
+let `setup.sh` add the prefix.
 
 **`verify.sh` returns no rows**
 
