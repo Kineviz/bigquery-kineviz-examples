@@ -1,0 +1,73 @@
+slug: sec-filings
+title: "BigQuery Graph + Kineviz: SEC filings as a knowledge graph"
+summary: >
+  Extract markets, risks, and competitors from SEC 10-K filings using Gemini inside
+  BigQuery, then explore the result as a property graph in Kineviz.
+
+status: preview
+maturity_note: >
+  BigQuery Graph is pre-GA (GQL needs an Enterprise reservation). This demo also
+  wraps the Kineviz/fortune500 pipeline, pinned to a commit, and calls Vertex AI —
+  so it costs meaningfully more than the other demos here.
+last_verified: 2026-08-13
+verified_with:
+  kineviz_desktop: "0.17.1"
+
+backend:        bigquery
+connection:     kineviz-native
+query_language: [gql]
+use_case:       [knowledge-graph, competitive-intelligence, llm-extraction]
+industry:       [financial-services, research]
+
+difficulty:     advanced
+time_minutes:   45
+
+cost:
+  estimate_usd: 3.00
+  bounded_by: >
+    SEC_TICKERS defaults to 3 companies rather than the full Fortune 500; Gemini
+    extraction is the dominant cost and scales linearly with ticker count, so the
+    ceiling is the ticker list, not a byte limit
+  billable_resources: [bigquery-dataset, bigquery-table, gcs-objects, vertex-ai-calls]
+
+inputs:
+  - name: GCP_PROJECT
+    prompt: "Google Cloud project ID to create the demo dataset in"
+    required: true
+  - name: GCS_BUCKET
+    prompt: "GCS bucket for staging extracted JSON (must already exist)"
+    required: true
+  - name: SEC_TICKERS
+    prompt: "Comma-separated tickers to process (each one costs Gemini calls)"
+    required: false
+    default: "AAPL,MSFT,NVDA"
+
+requires:
+  cli:  [gcloud, bq, git, python3]
+  apis: [bigquery.googleapis.com, aiplatform.googleapis.com, storage.googleapis.com]
+  iam:  ["roles/bigquery.jobUser", "roles/bigquery.dataEditor", "roles/aiplatform.user", "roles/storage.objectAdmin"]
+  reservation: "enterprise"
+  kineviz_desktop: ">=0.17.1"
+  kineviz_account: true
+
+steps:
+  - id: preflight
+    run: ./scripts/preflight.sh
+  - id: setup
+    run: ./scripts/setup.sh
+    creates:
+      - "bq://${GCP_PROJECT}.kineviz_sec_demo"
+      - "gs://${GCS_BUCKET}/kineviz-sec-demo/"
+  - id: verify
+    run: ./scripts/verify.sh
+    asserts: "GQL query over SecGraph returns >= 1 row"
+  - id: handoff
+    run: ./scripts/handoff.sh
+
+teardown: ./scripts/teardown.sh
+maintainer: "@kineviz/solutions"
+
+# Upstream pipeline this demo orchestrates, pinned so it cannot drift.
+upstream:
+  repo: https://github.com/Kineviz/fortune500
+  commit: "e4241958fa9be1a6ca94c807bf03a8859592a871"

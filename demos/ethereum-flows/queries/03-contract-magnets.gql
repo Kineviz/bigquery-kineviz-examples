@@ -1,0 +1,14 @@
+-- Which contracts pull in the most ETH, and from how many distinct wallets?
+--
+-- High value from few wallets is a different story than modest value from
+-- thousands — the first looks like treasury movement, the second like a product.
+GRAPH `${PROJECT}.${DATASET}.${GRAPH}`
+MATCH (w:Address)-[c:CALLED]->(k:Contract)
+RETURN
+  k.address             AS contract,
+  k.is_erc20            AS is_erc20,
+  COUNT(DISTINCT w.id)  AS distinct_callers,
+  SUM(c.total_eth)      AS eth_in
+GROUP BY contract, is_erc20
+ORDER BY eth_in DESC
+LIMIT 25

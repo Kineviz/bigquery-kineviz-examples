@@ -1,0 +1,16 @@
+-- Sensitive resources a principal can reach by more than one route.
+--
+-- This is the finding a spreadsheet cannot produce. Revoking one grant feels
+-- like remediation; if a second path exists, nothing changed. Count the routes
+-- before you close the ticket.
+GRAPH `${PROJECT}.${DATASET}.${GRAPH}`
+MATCH (actor:Principal)-[:CAN_IMPERSONATE]->(proxy:Principal)-[:ACCESSED]->(r:Resource)
+WHERE r.sensitivity IN ('high', 'critical')
+RETURN
+  actor.name              AS actor,
+  r.name                  AS resource,
+  COUNT(DISTINCT proxy.id) AS distinct_routes,
+  STRING_AGG(DISTINCT proxy.name, ', ') AS via
+GROUP BY actor, resource
+HAVING distinct_routes > 1
+ORDER BY distinct_routes DESC

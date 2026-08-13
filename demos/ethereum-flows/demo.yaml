@@ -1,0 +1,63 @@
+slug: ethereum-flows
+title: "BigQuery Graph + Kineviz: tracing Ethereum fund flows"
+summary: >
+  Build a property graph of one day of Ethereum transfers and follow value between
+  addresses, through contracts, and out to the hubs that concentrate it.
+
+status: preview
+maturity_note: >
+  BigQuery Graph is pre-GA. GQL queries require an Enterprise or Enterprise Plus
+  reservation; on on-demand pricing only GRAPH_EXPAND is available.
+last_verified: 2026-08-13
+verified_with:
+  kineviz_desktop: "0.17.1"
+
+backend:        bigquery
+connection:     kineviz-native
+query_language: [gql]
+use_case:       [blockchain-analytics, fund-tracing, aml]
+industry:       [financial-services, crypto]
+
+difficulty:     intermediate
+time_minutes:   15
+
+cost:
+  estimate_usd: 0.20
+  bounded_by: >
+    setup reads a single day partition of crypto_ethereum (one explicit timestamp
+    range, so BigQuery prunes to one day) and materializes the top addresses into
+    your project; every query sets maximum_bytes_billed, default 30 GB
+  billable_resources: [bigquery-dataset, bigquery-table]
+
+inputs:
+  - name: GCP_PROJECT
+    prompt: "Google Cloud project ID to create the demo dataset in"
+    required: true
+  - name: ETH_DATE
+    prompt: "Which day of Ethereum history to load (YYYY-MM-DD)"
+    required: false
+    default: "2024-01-15"
+
+requires:
+  cli:  [gcloud, bq]
+  apis: [bigquery.googleapis.com]
+  iam:  ["roles/bigquery.jobUser", "roles/bigquery.dataEditor"]
+  reservation: "enterprise"
+  kineviz_desktop: ">=0.17.1"
+  kineviz_account: true
+
+steps:
+  - id: preflight
+    run: ./scripts/preflight.sh
+  - id: setup
+    run: ./scripts/setup.sh
+    creates:
+      - "bq://${GCP_PROJECT}.kineviz_eth_demo"
+  - id: verify
+    run: ./scripts/verify.sh
+    asserts: "GQL query over EthGraph returns >= 1 row"
+  - id: handoff
+    run: ./scripts/handoff.sh
+
+teardown: ./scripts/teardown.sh
+maintainer: "@kineviz/solutions"

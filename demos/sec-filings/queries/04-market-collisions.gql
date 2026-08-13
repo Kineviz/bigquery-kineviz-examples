@@ -1,0 +1,10 @@
+-- Companies converging on the same market from different starting points.
+--
+-- Two companies entering one market is where competition is about to happen but
+-- has not yet shown up in the competitor disclosures. Run this in Kineviz — the
+-- convergence is a shape.
+GRAPH `${PROJECT}.${DATASET}.${GRAPH}`
+MATCH p = (a:Company)-[:ENTERING]->(m:Market)<-[:ENTERING]-(b:Company)
+WHERE a.id < b.id
+RETURN p
+LIMIT 150

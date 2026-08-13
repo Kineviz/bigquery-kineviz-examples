@@ -1,0 +1,9 @@
+-- Who names whom as a competitor?
+--
+-- Competitor claims are directional and often asymmetric: A names B, B never
+-- mentions A. That asymmetry is the interesting part, and it is immediately
+-- visible in Kineviz while being tedious to read in a table.
+GRAPH `${PROJECT}.${DATASET}.${GRAPH}`
+MATCH p = (c:Company)-[:COMPETES_WITH]->(:NormalizedCompetitor)
+RETURN p
+LIMIT 200

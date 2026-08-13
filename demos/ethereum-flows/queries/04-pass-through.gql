@@ -1,0 +1,18 @@
+-- Wallets that receive value and forward almost all of it the same day.
+--
+-- A pass-through wallet holds nothing: what comes in goes straight out. One is
+-- unremarkable. A chain of them is the shape money-laundering typologies look
+-- for, and it is much easier to see than to tabulate.
+GRAPH `${PROJECT}.${DATASET}.${GRAPH}`
+MATCH (upstream:Address)-[in_edge:SENT]->(mid:Address)-[out_edge:SENT]->(downstream:Address)
+WHERE upstream.id <> downstream.id
+  AND in_edge.total_eth > 1
+  AND out_edge.total_eth >= in_edge.total_eth * 0.9
+RETURN
+  upstream.address   AS from_address,
+  mid.address        AS pass_through,
+  downstream.address AS to_address,
+  in_edge.total_eth  AS eth_in,
+  out_edge.total_eth AS eth_out
+ORDER BY eth_in DESC
+LIMIT 50

@@ -1,0 +1,17 @@
+-- Principals racking up permission denials.
+--
+-- Denials are usually a broken job. Sometimes they are someone finding out what
+-- they can reach. Either way the pattern matters more than the count: many
+-- denials spread across many resources reads very differently from many against
+-- one.
+GRAPH `${PROJECT}.${DATASET}.${GRAPH}`
+MATCH (p:Principal)-[a:ACCESSED]->(r:Resource)
+WHERE a.denied_count > 0
+RETURN
+  p.name                      AS principal,
+  COUNT(DISTINCT r.id)        AS resources_touched,
+  SUM(a.denied_count)         AS denials,
+  STRING_AGG(DISTINCT r.sensitivity, ', ') AS sensitivities
+GROUP BY principal
+ORDER BY denials DESC
+LIMIT 25

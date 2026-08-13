@@ -1,0 +1,15 @@
+-- Risks that more than one company discloses.
+--
+-- A risk one company names is that company's problem. A risk everyone names is
+-- a sector condition — and the ones sitting in between are where the useful
+-- questions are.
+GRAPH `${PROJECT}.${DATASET}.${GRAPH}`
+MATCH (c:Company)-[:FACING]->(r:Risk)
+RETURN
+  r.id                   AS risk,
+  COUNT(DISTINCT c.id)   AS companies,
+  STRING_AGG(DISTINCT c.id, ', ') AS named_by
+GROUP BY risk
+HAVING companies > 1
+ORDER BY companies DESC
+LIMIT 25

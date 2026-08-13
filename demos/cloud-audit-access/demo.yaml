@@ -1,0 +1,58 @@
+slug: cloud-audit-access
+title: "BigQuery Graph + Kineviz: privilege escalation paths in audit logs"
+summary: >
+  Build a property graph from Cloud Audit Log records and find the paths where a
+  user reaches a sensitive resource by impersonating a service account.
+
+status: preview
+maturity_note: >
+  BigQuery Graph is pre-GA. GQL queries require an Enterprise or Enterprise Plus
+  reservation; on on-demand pricing only GRAPH_EXPAND is available.
+last_verified: 2026-08-13
+verified_with:
+  kineviz_desktop: "0.17.1"
+
+backend:        bigquery
+connection:     kineviz-native
+query_language: [gql]
+use_case:       [security, iam, privilege-escalation, audit]
+industry:       [security, cloud-operations]
+
+difficulty:     beginner
+time_minutes:   10
+
+cost:
+  estimate_usd: 0.01
+  bounded_by: >
+    the dataset is synthetic and generated locally (a few MB), so nothing reads a
+    public dataset at all; every query still sets maximum_bytes_billed
+  billable_resources: [bigquery-dataset, bigquery-table]
+
+inputs:
+  - name: GCP_PROJECT
+    prompt: "Google Cloud project ID to create the demo dataset in"
+    required: true
+
+requires:
+  cli:  [gcloud, bq, python3]
+  apis: [bigquery.googleapis.com]
+  iam:  ["roles/bigquery.jobUser", "roles/bigquery.dataEditor"]
+  reservation: "enterprise"
+  kineviz_desktop: ">=0.17.1"
+  kineviz_account: true
+
+steps:
+  - id: preflight
+    run: ./scripts/preflight.sh
+  - id: setup
+    run: ./scripts/setup.sh
+    creates:
+      - "bq://${GCP_PROJECT}.kineviz_audit_demo"
+  - id: verify
+    run: ./scripts/verify.sh
+    asserts: "GQL query over AuditGraph returns >= 1 row"
+  - id: handoff
+    run: ./scripts/handoff.sh
+
+teardown: ./scripts/teardown.sh
+maintainer: "@kineviz/solutions"

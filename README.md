@@ -27,6 +27,9 @@ your project, verifies it, and hands you questions to ask.
 
 | Demo | What it shows | Level | Time | Cost |
 |---|---|---|---|---|
+| [`cloud-audit-access`](demos/cloud-audit-access/) _(preview)_ | Build a property graph from Cloud Audit Log records and find the paths where a user reaches a sensitive resource by impersonating a service account. | beginner | 10 min | ~$0.01 |
+| [`ethereum-flows`](demos/ethereum-flows/) _(preview)_ | Build a property graph of one day of Ethereum transfers and follow value between addresses, through contracts, and out to the hubs that concentrate it. | intermediate | 15 min | ~$0.20 |
+| [`sec-filings`](demos/sec-filings/) _(preview)_ | Extract markets, risks, and competitors from SEC 10-K filings using Gemini inside BigQuery, then explore the result as a property graph in Kineviz. | advanced | 45 min | ~$3.00 |
 | [`supply-chain-deps`](demos/supply-chain-deps/) _(preview)_ | Build a property graph over Google's deps.dev public dataset and trace transitive dependency risk to single-maintainer packages. | beginner | 12 min | ~$0.05 |
 
 <!-- END GENERATED DEMOS -->

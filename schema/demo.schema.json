@@ -131,6 +131,21 @@
     },
 
     "teardown": { "type": "string" },
-    "maintainer": { "type": "string" }
+    "maintainer": { "type": "string" },
+
+    "upstream": {
+      "type": "object",
+      "description": "Set when a demo orchestrates a pipeline living in another repo rather than owning the code. Pin the commit — an unpinned upstream is how a demo silently stops working.",
+      "required": ["repo", "commit"],
+      "additionalProperties": false,
+      "properties": {
+        "repo": { "type": "string", "format": "uri" },
+        "commit": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{40}$",
+          "description": "Full SHA. A branch name is not a pin."
+        }
+      }
+    }
   }
 }
