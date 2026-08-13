@@ -56,7 +56,7 @@ keeps exploration fast and the cost near zero.
 1. **A Kineviz account** — [sign up](https://www.kineviz.com/). Kineviz Desktop is **free
    for individual use, forever**, but the app requires sign-in. Do this first.
 2. **Kineviz Desktop v0.17.1+** —
-   [releases](https://github.com/Kineviz/kineviz-desktop/releases). 16 GB RAM, 30 GB disk.
+   [releases](https://github.com/Kineviz/kineviz-desktop/releases). ~600 MB installed, 16 GB RAM.
 3. **A Google Cloud project** with billing enabled and these roles on your account:
    - [`roles/bigquery.jobUser`](https://cloud.google.com/bigquery/docs/access-control#bigquery.jobUser) — run queries
    - [`roles/bigquery.dataEditor`](https://cloud.google.com/bigquery/docs/access-control#bigquery.dataEditor) — create the demo dataset

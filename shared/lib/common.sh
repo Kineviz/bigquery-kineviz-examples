@@ -143,7 +143,7 @@ three steps, all yours — an agent cannot do any of them for you.
       2. Install Kineviz Desktop v$floor or later:
          $(kineviz_asset_hint "$floor")
       3. Launch it and sign in.
-    Needs 16 GB RAM and 30 GB free disk. Re-run when done — nothing billable has been created yet.
+    Needs ~1 GB free disk and 16 GB RAM. Re-run when done — nothing billable has been created yet.
 EOF
 )"
 }

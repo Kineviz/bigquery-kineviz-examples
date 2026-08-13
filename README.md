@@ -51,7 +51,7 @@ step-by-step section with the literal `bq` and `gcloud` calls.
 1. **A Kineviz account** — [sign up](https://www.kineviz.com/). Kineviz Desktop is **free
    for individual use, forever**; the app requires sign-in, so do this first.
 2. **[Kineviz Desktop](https://github.com/Kineviz/kineviz-desktop/releases)** v0.17.1+ —
-   Windows, macOS, or Linux. 16 GB RAM, 30 GB free disk.
+   Windows, macOS, or Linux. ~600 MB installed, 16 GB RAM.
 3. **A Google Cloud project** with billing enabled, plus `gcloud` and `bq`.
 
 > **BigQuery Graph is pre-GA.** GQL queries need an **Enterprise** or **Enterprise Plus**

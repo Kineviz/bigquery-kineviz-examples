@@ -44,7 +44,7 @@ builds one from a public dataset.
 Those two are enough for read-only use, which is what Kineviz needs in production. You only
 need write roles if you're also *creating* graphs.
 
-**4. About 30 GB free disk and 16 GB RAM**, for Desktop.
+**4. Room for Desktop** — about 200 MB to download, ~600 MB installed, plus 16 GB RAM.
 
 ---
 
