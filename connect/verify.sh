@@ -66,7 +66,7 @@ location=$(bq --project_id="$PROJECT" show --format=prettyjson "$PROJECT:$DATASE
 [ -n "$location" ] || die "Dataset '$DATASET' not found in project '$PROJECT', or you cannot read it." \
   "Check the name, and that your account has roles/bigquery.dataViewer on the project that OWNS the dataset."
 ok "dataset found (location: $location)"
-note "use exactly '$location' as the Region in Kineviz — 'US' and 'us-central1' are different"
+note "if step 6 lists no graphs, set this as 'Select location' in Kineviz"
 
 # 2 — the property graph is registered
 if ! bq --project_id="$PROJECT" query --use_legacy_sql=false --format=csv --quiet \
@@ -105,11 +105,11 @@ else
 
   ${_c_green}Ready to connect.${_c_reset} In Kineviz Desktop → Create Project:
 
-    Database Type : BigQuery
-    Key file      : your service account JSON
-    Database      : $DATASET
-    Region        : $location
-    Graph         : $GRAPH
+    Database Type            : BigQuery Property Graph
+    Upload Service Account   : your service account JSON
+    Select Database          : $DATASET
+    Select location (Optional): $location
+    Select Graph Database    : $GRAPH
 
   Walkthrough with screenshots: connect/README.md § 3 · Connect
 

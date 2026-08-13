@@ -24,11 +24,11 @@ cat <<EOF
 
    Last step — connect Kineviz (about 60 seconds):
      Open Kineviz Desktop → Create Project
-       → Database Type: BigQuery
-       → Upload key:    your service account JSON
-       → Database:      ${BQ_DATASET}
-       → Region:        ${BQ_LOCATION}
-       → Graph:         ${BQ_GRAPH}
+       → Database Type:             BigQuery Property Graph
+       → Upload Service Account:    your service account JSON
+       → Select Database:           ${BQ_DATASET}
+       → Select location (Optional):${BQ_LOCATION}
+       → Select Graph Database:     ${BQ_GRAPH}
      Walkthrough + screenshots: ../../connect/README.md
      Need a key?                ../../connect/service-account.md
 

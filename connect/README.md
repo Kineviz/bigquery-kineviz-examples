@@ -108,7 +108,7 @@ Not sure which Mac you have: menu → **About This Mac** → **Chip**.
 Install, launch, and sign in with the account from *Before you start*.
 
 **Prefer not to install anything, or need the data to stay inside your own GCP project?**
-Two alternatives, same six connect steps:
+Two alternatives, same connection flow:
 
 - **[GraphXR Explorer for BigQuery](https://console.cloud.google.com/marketplace/product/kineviz-public/graphxr-explorer-for-bigquery)**
   on Google Cloud Marketplace — runs entirely inside your project. The right answer for
@@ -119,34 +119,47 @@ Two alternatives, same six connect steps:
 
 ## 3 · Connect
 
-Six steps in Kineviz Desktop.
+Two dialogs in Kineviz Desktop: create the project, then a four-step connection wizard.
 
-**1. Create a project**
+### Create the project
 
-![Create Project](img/01_create_project.png)
+**1. Click Create New Project**
 
-**2. Name it, and set Database Type to BigQuery**
+![Create New Project](img/01_create_project.png)
 
-![Select name and type](img/02_select_name_type_bigquery.png)
+**2. Enter a Project Name, and set Database Type to `BigQuery Property Graph`** — then
+**Confirm**
 
-**3. Upload your service account key** — the `key.json` from step 1
+![Project name and database type](img/02_select_name_type_bigquery.png)
 
-![Upload key](img/03_upload_account_key.png)
+> Pick **BigQuery Property Graph**, not any other BigQuery entry. The property-graph type is
+> what reads a graph created with `CREATE PROPERTY GRAPH`.
 
-**4. Select your database** (the BigQuery dataset holding the graph)
+### Connect to Google BigQuery Property Graph
 
-![Select database](img/04_select_db.png)
+The next dialog has a **Service Account** tab with four numbered steps.
 
-**5. Select your region** — must match the dataset's location, e.g. `US`
+**3. Upload Service Account** — the `key.json` from step 1 of this guide
 
-![Select region](img/05_select_region.png)
+![Upload Service Account](img/03_upload_account_key.png)
 
-**6. Select your graph** — the name from your `CREATE PROPERTY GRAPH`
+**4. Select Database** — the BigQuery dataset holding your graph, chosen from the dropdown
 
-![Select graph](img/06_select_graph.png)
+![Select Database](img/04_select_db.png)
 
-Click through, and the canvas opens. Hit **Search**, pick a node label, and run it to pull
-your first nodes.
+**5. Select location (Optional)** — pick your dataset's location from the dropdown, shown by
+friendly name (`US (Multiple regions in the United States)`, not `us-central1`)
+
+![Select location](img/05_select_location.png)
+
+> It is genuinely optional — Kineviz can resolve the location itself. Set it if your dataset
+> lives somewhere other than the multi-region default, or if step 6 shows no graphs.
+
+**6. Select Graph Database** — the name from your `CREATE PROPERTY GRAPH` — then **Connect**
+
+![Select Graph Database](img/06_select_graph.png)
+
+The canvas opens. Hit **Search**, pick a node label, and run it to pull your first nodes.
 
 ---
 
@@ -166,14 +179,19 @@ can't see the graph, the problem is the connection settings, not BigQuery.
 
 ## Troubleshooting
 
-**"Graph not found" but the graph exists**
+**No graphs listed at step 6 (Select Graph Database)**
 
-The region in step 5 must match your dataset's location exactly. A dataset in `us-central1`
-is not `US`. Check with:
+Most often the location. Step 5 is optional, so it is easy to skip — but if your dataset is
+not in the multi-region default, Kineviz may look in the wrong place. Find your dataset's
+location and set it explicitly:
 
 ```bash
 bq show --format=prettyjson "$PROJECT_ID:$DATASET" | grep location
 ```
+
+Then match it in the step 5 dropdown, which lists friendly names — `US (Multiple regions in
+the United States)` rather than `us-central1`. Failing that, confirm the graph exists at all
+with [`verify.sh`](verify.sh).
 
 **Queries fail with a reservation or edition error**
 

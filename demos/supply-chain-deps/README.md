@@ -12,7 +12,7 @@ Then you use it to find where supply-chain risk actually concentrates: not the p
 the most dependents, but the ones with many dependents *and* an under-resourced repo behind
 them.
 
-![The dependency graph in Kineviz](img/hero.png)
+<!-- TODO: hero screenshot of the dependency graph on the Kineviz canvas -> img/hero.png -->
 
 ## At a glance
 
@@ -134,18 +134,18 @@ sed -e "s|\${PROJECT}|$GCP_PROJECT|g" -e "s|\${DATASET}|$BQ_DATASET|g" \
 
 ## Connect Kineviz
 
-The walkthrough with screenshots is in **[`connect/`](../../connect/)** — same six steps for
+The walkthrough with screenshots is in **[`connect/`](../../connect/)** — the same flow for
 every demo here, so it's documented once.
 
 Values for this demo:
 
 | Field | Value |
 |---|---|
-| Database Type | BigQuery |
-| Key file | your service account JSON ([how to make one](../../connect/service-account.md)) |
-| Database | `kineviz_deps_demo` |
-| Region | whatever you set as `BQ_LOCATION` (default `US`) |
-| Graph | `DepsGraph` |
+| Database Type | `BigQuery Property Graph` |
+| Upload Service Account | your service account JSON ([how to make one](../../connect/service-account.md)) |
+| Select Database | `kineviz_deps_demo` |
+| Select location (Optional) | your `BQ_LOCATION` (default `US`) |
+| Select Graph Database | `DepsGraph` |
 
 ## Explore
 

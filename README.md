@@ -60,7 +60,7 @@ step-by-step section with the literal `bq` and `gcloud` calls.
 
 ### Other ways to run Kineviz
 
-Same six connect steps in all three:
+Same connection flow in all three:
 
 - **[GraphXR Explorer for BigQuery](https://console.cloud.google.com/marketplace/product/kineviz-public/graphxr-explorer-for-bigquery)**
   — Google Cloud Marketplace, runs entirely inside your own GCP project. The answer for
