@@ -6,6 +6,7 @@
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/../../../shared/lib/common.sh"
 eval "$(parse_common_flags "$@")"
+# shellcheck disable=SC2034  # read by the logging helpers in common.sh
 GXR_STEP=setup
 DEMO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
