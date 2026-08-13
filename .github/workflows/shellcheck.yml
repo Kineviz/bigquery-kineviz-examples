@@ -43,12 +43,20 @@ jobs:
           done < <(git ls-files '*.sh' 'gxr')
           exit $bad
 
-      - name: Every script must fail loudly
+      # Scripts that DO something must abort on the first error. Test harnesses
+      # under tools/ deliberately continue past a failure so they can report
+      # every one, so they require -u and pipefail but not -e.
+      - name: Scripts fail loudly
         run: |
           set -euo pipefail
           bad=0
           while IFS= read -r f; do
             head -20 "$f" | grep -q 'set -euo pipefail' \
               || { echo "::error file=$f::missing 'set -euo pipefail'"; bad=1; }
-          done < <(git ls-files '*.sh')
+          done < <(git ls-files 'demos/*.sh' 'connect/*.sh' 'shared/*.sh')
+
+          while IFS= read -r f; do
+            head -20 "$f" | grep -qE 'set -[a-z]*u[a-z]* +-?o? *pipefail|set -uo pipefail' \
+              || { echo "::error file=$f::missing 'set -u' and 'pipefail'"; bad=1; }
+          done < <(git ls-files 'tools/*.sh')
           exit $bad

@@ -237,7 +237,9 @@ if ./gxr list >/dev/null 2>&1; then ok "./gxr list works from repo root"
 else bad "./gxr list fails from repo root"; fi
 
 d=$(demos | head -1)
-if [ -n "$d" ] && (cd "$d" && ../../gxr list >/dev/null 2>&1); then
+if [ -z "$d" ]; then
+  ok "no demos yet — skipping the in-demo path check (fine for a fresh template)"
+elif (cd "$d" && ../../gxr list >/dev/null 2>&1); then
   ok "../../gxr works from inside a demo dir (as the READMEs instruct)"
 else
   bad "../../gxr fails from inside a demo dir" "demo READMEs tell people to run it that way"
