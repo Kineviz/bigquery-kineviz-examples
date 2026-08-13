@@ -20,12 +20,26 @@ jobs:
         with:
           severity: warning
 
-      - name: Every script must be executable
+      # Scripts meant to be run must be executable. Libraries under shared/lib/
+      # are meant to be *sourced*, so they must NOT be — an executable library
+      # invites someone to run it, which does nothing useful.
+      - name: Executable bits are correct
         run: |
           set -euo pipefail
           bad=0
           while IFS= read -r f; do
-            [ -x "$f" ] || { echo "::error file=$f::not executable (chmod +x)"; bad=1; }
+            case "$f" in
+              shared/lib/*)
+                if [ -x "$f" ]; then
+                  echo "::error file=$f::sourced library should not be executable (chmod -x)"
+                  bad=1
+                fi ;;
+              *)
+                if [ ! -x "$f" ]; then
+                  echo "::error file=$f::script is not executable (chmod +x)"
+                  bad=1
+                fi ;;
+            esac
           done < <(git ls-files '*.sh' 'gxr')
           exit $bad
 
