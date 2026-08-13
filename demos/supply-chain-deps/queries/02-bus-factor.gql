@@ -1,0 +1,16 @@
+-- Widely-depended-on packages whose backing repo looks under-resourced.
+--
+-- The pairing is the point: heavy fan-in AND a low-activity project is where
+-- supply-chain risk actually concentrates. Either signal alone says little.
+GRAPH `${PROJECT}.${DATASET}.${GRAPH}`
+MATCH (dependent:Package)-[:DEPENDS_ON]->(p:Package)-[:MAINTAINED_IN]->(proj:Project)
+WHERE proj.stars < 500
+RETURN
+  p.name        AS package,
+  proj.name     AS project,
+  proj.stars    AS stars,
+  proj.open_issues AS open_issues,
+  COUNT(DISTINCT dependent.id) AS dependents
+GROUP BY package, project, stars, open_issues
+ORDER BY dependents DESC
+LIMIT 25

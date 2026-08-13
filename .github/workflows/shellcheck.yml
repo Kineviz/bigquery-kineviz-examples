@@ -1,0 +1,40 @@
+name: shellcheck
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# These scripts get read by a Google reviewer and copied by customers.
+# They are documentation as much as automation.
+jobs:
+  shellcheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: ShellCheck
+        uses: ludeeus/action-shellcheck@master
+        env:
+          SHELLCHECK_OPTS: -e SC1091 -e SC2154
+        with:
+          severity: warning
+
+      - name: Every script must be executable
+        run: |
+          set -euo pipefail
+          bad=0
+          while IFS= read -r f; do
+            [ -x "$f" ] || { echo "::error file=$f::not executable (chmod +x)"; bad=1; }
+          done < <(git ls-files '*.sh' 'gxr')
+          exit $bad
+
+      - name: Every script must fail loudly
+        run: |
+          set -euo pipefail
+          bad=0
+          while IFS= read -r f; do
+            head -20 "$f" | grep -q 'set -euo pipefail' \
+              || { echo "::error file=$f::missing 'set -euo pipefail'"; bad=1; }
+          done < <(git ls-files '*.sh')
+          exit $bad

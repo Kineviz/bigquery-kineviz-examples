@@ -1,0 +1,62 @@
+slug: supply-chain-deps
+title: "BigQuery Graph + Kineviz: open-source supply-chain risk"
+summary: >
+  Build a property graph over Google's deps.dev public dataset and trace transitive
+  dependency risk to single-maintainer packages.
+
+status: preview
+maturity_note: >
+  BigQuery Graph is pre-GA. GQL queries require an Enterprise or Enterprise Plus
+  reservation; on on-demand pricing only GRAPH_EXPAND is available.
+last_verified: 2026-08-13
+verified_with:
+  kineviz_desktop: "0.17.1"
+
+backend:        bigquery
+connection:     kineviz-native
+query_language: [gql]
+use_case:       [supply-chain-security, sbom, dependency-analysis]
+industry:       [software, security]
+
+difficulty:     beginner
+time_minutes:   12
+
+cost:
+  estimate_usd: 0.05
+  bounded_by: >
+    setup materializes a single-ecosystem slice (~200 MB) into your own project;
+    every query sets maximum_bytes_billed, default 2 GB
+  billable_resources: [bigquery-dataset, bigquery-table]
+
+inputs:
+  - name: GCP_PROJECT
+    prompt: "Google Cloud project ID to create the demo dataset in"
+    required: true
+  - name: BQ_LOCATION
+    prompt: "BigQuery location for the demo dataset"
+    required: false
+    default: "US"
+
+requires:
+  cli:  [gcloud, bq]
+  apis: [bigquery.googleapis.com]
+  iam:  ["roles/bigquery.jobUser", "roles/bigquery.dataEditor"]
+  reservation: "enterprise"
+  kineviz_desktop: ">=0.17.1"
+  kineviz_account: true
+
+steps:
+  - id: preflight
+    run: ./scripts/preflight.sh
+  - id: setup
+    run: ./scripts/setup.sh
+    creates:
+      - "bq://${GCP_PROJECT}.kineviz_deps_demo"
+  - id: verify
+    run: ./scripts/verify.sh
+    asserts: "GQL query over DepsGraph returns >= 1 row"
+  - id: handoff
+    run: ./scripts/handoff.sh
+
+teardown: ./scripts/teardown.sh
+maintainer: "@kineviz/solutions"

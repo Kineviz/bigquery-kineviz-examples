@@ -1,0 +1,11 @@
+-- Packages that look independent but share one backing repo.
+--
+-- Depending on three packages from the same repo is one point of failure wearing
+-- three names. This is the query that most often surprises people.
+GRAPH `${PROJECT}.${DATASET}.${GRAPH}`
+MATCH (p:Package)-[:MAINTAINED_IN]->(proj:Project)<-[:MAINTAINED_IN]-(q:Package)
+WHERE p.id < q.id
+RETURN proj.name AS project, COUNT(DISTINCT p.id) + 1 AS packages_in_repo
+GROUP BY project
+ORDER BY packages_in_repo DESC
+LIMIT 25
