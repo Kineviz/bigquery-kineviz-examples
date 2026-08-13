@@ -1,9 +1,13 @@
 -- Who names whom as a competitor?
 --
 -- Competitor claims are directional and often asymmetric: A names B, B never
--- mentions A. That asymmetry is the interesting part, and it is immediately
--- visible in Kineviz while being tedious to read in a table.
+-- mentions A. That asymmetry is the interesting part.
+--
+-- BigQuery GQL cannot RETURN a path variable, so this returns the endpoints.
+-- In Kineviz the same match renders as a network, which is where the asymmetry
+-- is easier to see than to read.
 GRAPH `${GCP_PROJECT}.${BQ_DATASET}.${BQ_GRAPH}`
-MATCH p = (c:Company)-[:COMPETES_WITH]->(:NormalizedCompetitor)
-RETURN p
+MATCH (c:Company)-[:COMPETES_WITH]->(k:Competitor)
+RETURN c.id AS company, k.label AS names_as_competitor, k.relationship AS relationship
+ORDER BY company
 LIMIT 200

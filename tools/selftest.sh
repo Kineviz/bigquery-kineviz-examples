@@ -29,13 +29,35 @@ grp()  { [ "$QUIET" = 1 ] || printf '\n%s\n' "$1"; }
 
 demos() { find demos -mindepth 1 -maxdepth 1 -type d -not -name '_*' | sort; }
 
+# These tests overwrite each demo's .env with the placeholder example, so any
+# real .env has to be preserved. An earlier version restored it inside the first
+# test loop and then a later loop deleted it again — which silently destroyed
+# working config. Back up once, restore on any exit.
+BACKUP_DIR=$(mktemp -d)
+save_envs() {
+  for d in $(demos); do
+    [ -f "$d/.env" ] && cp "$d/.env" "$BACKUP_DIR/$(basename "$d").env"
+  done
+  return 0
+}
+restore_envs() {
+  for d in $(demos); do
+    rm -f "$d/.env"
+    [ -f "$BACKUP_DIR/$(basename "$d").env" ] && cp "$BACKUP_DIR/$(basename "$d").env" "$d/.env"
+  done
+  rm -rf "$BACKUP_DIR"
+  return 0
+}
+trap restore_envs EXIT INT TERM
+save_envs
+
 # ---------------------------------------------------------------------------
 grp "1. Scripts fail correctly when config is missing"
 # A script that silently proceeds without config is worse than one that fails.
 
 for d in $(demos); do
   slug=$(basename "$d")
-  [ -f "$d/.env" ] && mv "$d/.env" "$d/.env.selftest-backup"
+  rm -f "$d/.env"
 
   out=$("$d/scripts/preflight.sh" 2>&1); rc=$?
   if [ $rc -eq 0 ]; then
@@ -55,7 +77,6 @@ for d in $(demos); do
     ok "$slug preflight rejects placeholder values"
   fi
   rm -f "$d/.env"
-  [ -f "$d/.env.selftest-backup" ] && mv "$d/.env.selftest-backup" "$d/.env"
 done
 
 # ---------------------------------------------------------------------------

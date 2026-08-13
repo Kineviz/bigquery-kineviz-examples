@@ -21,7 +21,7 @@ them in one query.
 | | |
 |---|---|
 | **Backend** | BigQuery Graph |
-| **Status** | ⚠️ Pre-GA — **GQL requires an Enterprise or Enterprise Plus reservation** |
+| **Status** | Pre-GA — GQL verified working on on-demand pricing ([details](../../docs/PREVIEW_NOTES.md)) |
 | **Connection** | Kineviz Desktop → BigQuery Property Graph ([how](../../connect/)) |
 | **Dataset** | Synthetic, generated locally — no public dataset, nothing to download |
 | **Time** | ~10 minutes |
@@ -65,9 +65,10 @@ them in one query.
 3. **A Google Cloud project** with billing enabled and these roles on your account:
    - [`roles/bigquery.jobUser`](https://cloud.google.com/bigquery/docs/access-control#bigquery.jobUser) — run queries
    - [`roles/bigquery.dataEditor`](https://cloud.google.com/bigquery/docs/access-control#bigquery.dataEditor) — create the demo dataset
-4. **An Enterprise or Enterprise Plus reservation** in your BigQuery location, while
-   BigQuery Graph is pre-GA.
-5. **`gcloud`, `bq`, and Python 3.9+** — [install the SDK](https://cloud.google.com/sdk/docs/install).
+4. **`gcloud`, `bq`, and Python 3.9+** — [install the SDK](https://cloud.google.com/sdk/docs/install).
+
+   No BigQuery reservation is needed: GQL was verified working on on-demand pricing on
+   2026-08-13.
 
 ## Quick start
 
@@ -228,7 +229,8 @@ autodetect.
 
 **A reservation or edition error**
 
-The pre-GA reservation requirement. See [`docs/PREVIEW_NOTES.md`](../../docs/PREVIEW_NOTES.md).
+Uncommon — GQL was verified working on on-demand pricing. See
+[`docs/PREVIEW_NOTES.md`](../../docs/PREVIEW_NOTES.md) if you hit it.
 
 **Everything looks suspicious**
 

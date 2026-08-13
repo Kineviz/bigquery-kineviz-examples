@@ -3,18 +3,25 @@
 -- Principals that touch nothing sensitive directly, but reach it by
 -- impersonating something that can. An access review built on direct grants
 -- shows these people as harmless. The graph shows otherwise.
+--
+-- Note the `actor2` in the NOT EXISTS block: BigQuery GQL will not let you
+-- rebind a graph variable inside a subquery, so you bind a fresh name and tie
+-- it back with an explicit id filter.
 GRAPH `${GCP_PROJECT}.${BQ_DATASET}.${BQ_GRAPH}`
 MATCH (actor:Principal)-[:CAN_IMPERSONATE]->(proxy:Principal)-[a:ACCESSED]->(r:Resource)
 WHERE r.sensitivity IN ('high', 'critical')
+  AND a.success_count > 0
   AND NOT EXISTS {
-    MATCH (actor)-[:ACCESSED]->(direct:Resource)
-    WHERE direct.sensitivity IN ('high', 'critical')
+    MATCH (actor2:Principal)-[d:ACCESSED]->(direct:Resource)
+    WHERE actor2.id = actor.id
+      AND d.success_count > 0
+      AND direct.sensitivity IN ('high', 'critical')
   }
 RETURN
-  actor.name  AS actor,
+  actor.name           AS actor,
   actor.principal_type AS actor_type,
-  proxy.name  AS impersonates,
-  r.name      AS reaches,
-  r.sensitivity AS sensitivity,
-  a.call_count AS calls
+  proxy.name           AS impersonates,
+  r.name               AS reaches,
+  r.sensitivity        AS sensitivity,
+  a.success_count      AS calls
 ORDER BY sensitivity DESC, actor

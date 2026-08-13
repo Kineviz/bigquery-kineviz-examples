@@ -22,7 +22,7 @@ scale. It's also the most expensive one here, so read *At a glance* before runni
 | | |
 |---|---|
 | **Backend** | BigQuery Graph + Vertex AI (Gemini) |
-| **Status** | ⚠️ Pre-GA — **GQL requires an Enterprise or Enterprise Plus reservation** |
+| **Status** | Pre-GA — GQL verified working on on-demand pricing ([details](../../docs/PREVIEW_NOTES.md)) |
 | **Connection** | Kineviz Desktop → BigQuery Property Graph ([how](../../connect/)) |
 | **Dataset** | SEC EDGAR 10-K/10-Q filings, fetched live |
 | **Time** | ~45 minutes, mostly Gemini extraction |
@@ -92,8 +92,10 @@ they pass — each one, if missed, otherwise fails deep into a paid run.
      --member="serviceAccount:<THAT_SERVICE_ACCOUNT>" --role=roles/aiplatform.user
    ```
 
-7. **An Enterprise or Enterprise Plus reservation**, while BigQuery Graph is pre-GA.
-8. **`gcloud`, `bq`, `gsutil`, `git`, Python 3.9+.**
+7. **`gcloud`, `bq`, `gsutil`, `git`, Python 3.9+.**
+
+   No BigQuery reservation is needed: GQL was verified working on on-demand pricing on
+   2026-08-13.
 
 ## Quick start
 
@@ -187,8 +189,14 @@ Where competition is about to happen but hasn't yet shown up in the competitor d
 
 > **Every node here was extracted from prose by a language model.** That makes it a useful
 > index into thousands of pages nobody reads, and it means individual claims can be wrong.
-> The `evidence` property carries the source passage — check it before acting on anything.
-> That's the intended workflow: find the claim in the graph, then read the source.
+> Each node type carries its own provenance field — `evidence` on `Market`, `relationship` on
+> `Competitor`, `description` on `Risk`, plus `link` and `section` pointing back at the
+> filing. Check it before acting on anything. That is the intended workflow: find the claim
+> in the graph, then read the source.
+
+> **With few tickers, queries 3 and 4 return nothing.** Shared risks and shared markets need
+> several companies before overlaps exist. Verified against a two-company graph: queries 1
+> and 2 return rows, 3 and 4 correctly return none. Add tickers to see them populate.
 
 ## How the graph is modeled
 
@@ -199,15 +207,15 @@ which builds eleven node labels. The ones the queries here use:
 | Node label | Source table | What it is |
 |---|---|---|
 | `Company` | `nodes_company` | A filer, keyed by ticker |
-| `Market` | `nodes_market` | A market named in a filing, with `evidence` |
-| `Risk` | `nodes_risk` | A disclosed risk factor |
-| `NormalizedCompetitor` | `nodes_normalized_competitor` | A competitor name after LLM normalization |
+| `Market` | `nodes_market` | A market named in a filing, with `label`, `market_action`, `evidence` |
+| `Risk` | `nodes_risk` | A disclosed risk factor, with `label` and `description` |
+| `Competitor` | `nodes_competitor` | A competitor named in a filing, with `relationship` |
 
 | Edge label | From → To |
 |---|---|
 | `ENTERING` | `Company` → `Market` |
-| `FACING` | `Company` → `Risk` |
-| `COMPETES_WITH` | `Company` → `NormalizedCompetitor` |
+| `FACES_RISK` | `Company` → `Risk` |
+| `COMPETES_WITH` | `Company` → `Competitor` |
 
 Because the schema lives upstream, it can change when the pin is updated. If a query returns
 nothing, check the labels that pipeline produces at the pinned commit.

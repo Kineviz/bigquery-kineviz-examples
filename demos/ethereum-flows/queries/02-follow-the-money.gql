@@ -1,10 +1,19 @@
 -- Two hops out from one address.
 --
--- Replace the literal with any address from query 01. This is the query to run
+-- The default below is the busiest address on the default ETH_DATE (a Binance
+-- hot wallet). Replace it with any address from query 01 — and if you changed
+-- ETH_DATE, you must, because this one may not appear on another day. This is the query to run
 -- in Kineviz rather than the CLI: whether value fans out to many recipients or
 -- funnels into a few is obvious in the picture and invisible in a table.
+--
+-- BigQuery GQL cannot RETURN a path variable, so this returns each destination
+-- with how many hops away it is.
 GRAPH `${GCP_PROJECT}.${BQ_DATASET}.${BQ_GRAPH}`
-MATCH p = (root:Address WHERE root.address = '0x0000000000000000000000000000000000000000')
-          -[:SENT]->{1,2}(:Address)
-RETURN p
+MATCH p = (root:Address)-[:SENT]->{1,2}(dest:Address)
+WHERE root.address = '0x28c6c06298d514db089934071355e5743bf21d60'
+RETURN
+  ARRAY_LENGTH(NODES(p)) - 1 AS hops,
+  dest.address               AS destination,
+  dest.total_eth             AS destination_total_eth
+ORDER BY hops, destination_total_eth DESC
 LIMIT 300

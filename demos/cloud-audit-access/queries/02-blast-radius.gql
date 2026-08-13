@@ -1,11 +1,20 @@
 -- Everything one principal can reach, directly or by impersonation.
 --
--- Swap the name for anyone from query 01. Run this in Kineviz rather than the
--- CLI: "how far does this account actually reach" is a shape, and the answer to
--- "should we offboard this contractor first" is usually obvious on sight.
+-- Swap the name for anyone from query 01.
+--
+-- BigQuery GQL cannot RETURN a path variable, so this returns the reachable
+-- resources with how many impersonation hops it took to get there. In Kineviz
+-- the same traversal renders as a shape, which is the easier way to answer
+-- "should we offboard this contractor first".
 GRAPH `${GCP_PROJECT}.${BQ_DATASET}.${BQ_GRAPH}`
-MATCH p = (start:Principal WHERE start.name = 'contractor-priya@partner.example')
-          (-[:CAN_IMPERSONATE]->(:Principal)){0,2}
-          -[:ACCESSED]->(:Resource)
-RETURN p
-LIMIT 200
+MATCH p = (start:Principal)-[:CAN_IMPERSONATE]->{0,2}(reached:Principal)
+          -[a:ACCESSED]->(r:Resource)
+WHERE start.name = 'contractor-priya@partner.example'
+  AND a.success_count > 0
+RETURN
+  ARRAY_LENGTH(NODES(p)) - 2 AS impersonation_hops,
+  reached.name               AS via,
+  r.name                     AS resource,
+  r.sensitivity              AS sensitivity
+ORDER BY sensitivity DESC, impersonation_hops
+LIMIT 100

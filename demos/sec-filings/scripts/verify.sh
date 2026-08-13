@@ -12,20 +12,19 @@ step "Verify — running a real GQL query"
 load_env "$DEMO_DIR"
 require_env GCP_PROJECT BQ_DATASET BQ_GRAPH MAX_BYTES_BILLED
 
-err_file=$(mktemp); trap 'rm -f "$err_file"' EXIT
-
 out=$(bq --project_id="$GCP_PROJECT" query \
         --use_legacy_sql=false --format=csv --quiet \
         --maximum_bytes_billed="$MAX_BYTES_BILLED" \
         "GRAPH \`$GCP_PROJECT.$BQ_DATASET.$BQ_GRAPH\`
          MATCH (c:Company)-[:ENTERING]->(m:Market)
          RETURN c.id AS company, m.id AS market
-         LIMIT 10" 2>"$err_file") || {
-  e=$(tr '\n' ' ' < "$err_file")
+         LIMIT 10" 2>&1) || {
+  # bq writes query errors to stdout, not stderr, so capture both streams.
+  e=$(printf '%s' "$out" | tr '\n' ' ')
   case "$e" in
     *eservation*|*dition*|*n-demand*)
-      die "GQL rejected — this is the pre-GA reservation requirement." \
-          "BigQuery Graph needs an Enterprise or Enterprise Plus reservation for GQL. See docs/PREVIEW_NOTES.md. Your data is built; only the query is blocked." ;;
+      die "GQL rejected on edition or reservation grounds." \
+          "Uncommon — GQL was verified working on on-demand pricing. If your project does need one, add an Enterprise or Enterprise Plus reservation. Your data is built; only the query is blocked. See docs/PREVIEW_NOTES.md." ;;
     *)
       die "Verification query failed: ${e:-unknown error}" \
           "Confirm the pipeline finished. Its node tables live in $BQ_DATASET." ;;

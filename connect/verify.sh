@@ -78,28 +78,38 @@ if ! bq --project_id="$PROJECT" query --use_legacy_sql=false --format=csv --quie
 fi
 ok "property graph '$GRAPH' is registered"
 
-# 3 — it actually answers a GQL query. This is the step that catches a missing
-# Enterprise reservation, which is the top cause of a first run failing.
-rows=$(bq --project_id="$PROJECT" query --use_legacy_sql=false --format=csv --quiet \
-         --maximum_bytes_billed="$MAX_BYTES" \
-         "GRAPH \`$PROJECT.$DATASET.$GRAPH\` MATCH (n) RETURN n.\`\` AS anon LIMIT 1" \
-         2>/tmp/gxr_verify_err | tail -n +2 | wc -l | tr -d ' ') || {
-  err=$(tr '\n' ' ' < /tmp/gxr_verify_err)
+# 3 — it actually answers a GQL query. This is the check that matters: steps 1
+# and 2 only prove the graph is *registered*, not that it can be read.
+#
+# Two things learned the hard way here. bq writes query errors to stdout rather
+# than stderr, so both streams have to be captured or the diagnostic is lost and
+# every failure reports "unknown error". And the smoke query has to be valid GQL
+# — an earlier version used an empty backtick identifier, which BigQuery rejects
+# with "Invalid empty identifier", making this step fail against a perfectly
+# healthy graph.
+out=$(bq --project_id="$PROJECT" query --use_legacy_sql=false --format=csv --quiet \
+        --maximum_bytes_billed="$MAX_BYTES" \
+        "GRAPH \`$PROJECT.$DATASET.$GRAPH\` MATCH (n) RETURN COUNT(n) AS node_count" 2>&1) || {
+  err=$(printf '%s' "$out" | tr '\n' ' ')
   case "$err" in
     *eservation*|*dition*|*n-demand*)
-      die "GQL query rejected — this looks like the reservation requirement." \
-          "BigQuery Graph is pre-GA: GQL needs an Enterprise or Enterprise Plus reservation. On on-demand pricing use GRAPH_EXPAND instead. See https://docs.cloud.google.com/bigquery/docs/graph-overview" ;;
+      die "GQL query rejected on edition or reservation grounds." \
+          "Some projects need an Enterprise or Enterprise Plus reservation for GQL while BigQuery Graph is pre-GA. See https://docs.cloud.google.com/bigquery/docs/graph-overview" ;;
+    *"Invalid empty identifier"*|*"Syntax error"*)
+      die "The verification query itself is invalid: ${err}" \
+          "This is a bug in verify.sh, not in your graph. Please open an issue." ;;
     *)
-      die "GQL query failed: ${err:-unknown error}" \
+      die "GQL query failed: ${err:-no error text returned}" \
           "Confirm the graph's node tables are readable, then re-run." ;;
   esac
 }
 
-ok "GQL query succeeded (returned $rows row(s))"
+nodes=$(printf '%s\n' "$out" | tail -n +2 | head -1 | tr -d ' \r')
+ok "GQL query succeeded (graph has ${nodes:-?} nodes)"
 
 if [ "$JSON" = 1 ]; then
-  printf '{"ok":true,"project":"%s","dataset":"%s","graph":"%s","location":"%s","rows":%s}\n' \
-    "$PROJECT" "$DATASET" "$GRAPH" "$location" "$rows"
+  printf '{"ok":true,"project":"%s","dataset":"%s","graph":"%s","location":"%s","nodes":%s}\n' \
+    "$PROJECT" "$DATASET" "$GRAPH" "$location" "${nodes:-0}"
 else
   cat <<EOF
 

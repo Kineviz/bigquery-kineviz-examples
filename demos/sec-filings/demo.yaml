@@ -6,9 +6,9 @@ summary: >
 
 status: preview
 maturity_note: >
-  BigQuery Graph is pre-GA (GQL needs an Enterprise reservation). This demo also
-  wraps the Kineviz/fortune500 pipeline, pinned to a commit, and calls Vertex AI —
-  so it costs meaningfully more than the other demos here.
+  BigQuery Graph is pre-GA. This demo also wraps the Kineviz/fortune500 pipeline,
+  pinned to a commit, and calls Vertex AI — so it costs meaningfully more than the
+  other demos here.
 last_verified: 2026-08-13
 verified_with:
   kineviz_desktop: "0.17.1"

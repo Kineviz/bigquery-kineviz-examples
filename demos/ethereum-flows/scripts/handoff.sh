@@ -38,6 +38,6 @@ cat <<EOF
 
      Run 2 and 4 in Kineviz rather than the CLI — the shape is the finding.
 
-   Cost so far: ~\$0.20.  Tear down with:  ./gxr down ethereum-flows
+   Cost so far: ~\$0.03  Tear down with:  ./gxr down ethereum-flows
 
 EOF

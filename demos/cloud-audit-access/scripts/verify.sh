@@ -13,8 +13,6 @@ step "Verify — running the escalation-path query"
 load_env "$DEMO_DIR"
 require_env GCP_PROJECT BQ_DATASET BQ_GRAPH MAX_BYTES_BILLED
 
-err_file=$(mktemp); trap 'rm -f "$err_file"' EXIT
-
 # Deliberately the demo's headline query, not a trivial smoke test: if this
 # returns nothing, the demo is pointless even though the graph "works".
 out=$(bq --project_id="$GCP_PROJECT" query \
@@ -25,12 +23,13 @@ out=$(bq --project_id="$GCP_PROJECT" query \
          WHERE r.sensitivity IN ('high', 'critical')
          RETURN actor.name AS actor, proxy.name AS impersonates, r.name AS reaches
          ORDER BY actor
-         LIMIT 10" 2>"$err_file") || {
-  e=$(tr '\n' ' ' < "$err_file")
+         LIMIT 10" 2>&1) || {
+  # bq writes query errors to stdout, not stderr, so capture both streams.
+  e=$(printf '%s' "$out" | tr '\n' ' ')
   case "$e" in
     *eservation*|*dition*|*n-demand*)
-      die "GQL rejected — this is the pre-GA reservation requirement." \
-          "BigQuery Graph needs an Enterprise or Enterprise Plus reservation for GQL. See docs/PREVIEW_NOTES.md. Your data is built; only the query is blocked." ;;
+      die "GQL rejected on edition or reservation grounds." \
+          "Uncommon — GQL was verified working on on-demand pricing. If your project does need one, add an Enterprise or Enterprise Plus reservation. Your data is built; only the query is blocked. See docs/PREVIEW_NOTES.md." ;;
     *)
       die "Verification query failed: ${e:-unknown error}" \
           "Re-run './gxr up cloud-audit-access' — setup is idempotent. If it persists, open an issue with this output." ;;

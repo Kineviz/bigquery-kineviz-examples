@@ -35,14 +35,18 @@ CREATE OR REPLACE TABLE `${PROJECT}.${DATASET}.edges_accessed` AS
 SELECT
   e.principal              AS src_id,
   e.resource_name          AS dst_id,
-  COUNT(*)                 AS call_count,
+  COUNT(*)                  AS call_count,
+  COUNTIF(e.status = 'OK')  AS success_count,
   COUNTIF(e.status != 'OK') AS denied_count,
   STRING_AGG(DISTINCT e.method_name ORDER BY e.method_name LIMIT 5) AS methods,
   MAX(e.severity_tier)     AS max_severity_tier,
   MIN(e.timestamp)         AS first_seen,
   MAX(e.timestamp)         AS last_seen
 FROM `${PROJECT}.${DATASET}.raw_events` AS e
-WHERE e.status = 'OK'
+-- Deliberately NOT filtered to status='OK'. An earlier version aggregated only
+-- successful calls, which made denied_count structurally always zero and left
+-- the "who is accumulating denials" query unable to return anything. Keep both
+-- outcomes and let each query decide which it cares about.
 GROUP BY src_id, dst_id;
 
 -- Who can impersonate whom. This is the edge that turns a list of grants into a

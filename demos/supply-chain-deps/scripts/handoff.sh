@@ -43,6 +43,6 @@ cat <<EOF
 
      Run 3 in Kineviz rather than the CLI — the shape is the finding.
 
-   Cost so far: ~\$0.05.  Tear down with:  ./gxr down supply-chain-deps
+   Cost so far: ~\$0.03  Tear down with:  ./gxr down supply-chain-deps
 
 EOF

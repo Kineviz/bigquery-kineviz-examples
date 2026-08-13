@@ -19,7 +19,7 @@ CREATE OR REPLACE PROPERTY GRAPH `${PROJECT}.${DATASET}.${GRAPH}`
       SOURCE KEY (src_id) REFERENCES `${PROJECT}.${DATASET}.nodes_principal` (id)
       DESTINATION KEY (dst_id) REFERENCES `${PROJECT}.${DATASET}.nodes_resource` (id)
       LABEL ACCESSED
-      PROPERTIES (call_count, denied_count, methods, max_severity_tier, first_seen, last_seen),
+      PROPERTIES (call_count, success_count, denied_count, methods, max_severity_tier, first_seen, last_seen),
 
     `${PROJECT}.${DATASET}.edges_can_impersonate`
       KEY (src_id, dst_id)

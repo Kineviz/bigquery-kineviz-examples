@@ -6,8 +6,8 @@ summary: >
 
 status: preview
 maturity_note: >
-  BigQuery Graph is pre-GA. GQL queries require an Enterprise or Enterprise Plus
-  reservation; on on-demand pricing only GRAPH_EXPAND is available.
+  BigQuery Graph is pre-GA (Google's Pre-GA Offerings Terms apply). GQL was verified
+  running on on-demand pricing with no reservation on 2026-08-13.
 last_verified: 2026-08-13
 verified_with:
   kineviz_desktop: "0.17.1"
@@ -22,11 +22,11 @@ difficulty:     intermediate
 time_minutes:   15
 
 cost:
-  estimate_usd: 0.20
+  estimate_usd: 0.03
   bounded_by: >
-    setup reads a single day partition of crypto_ethereum (one explicit timestamp
-    range, so BigQuery prunes to one day) and materializes the top addresses into
-    your project; every query sets maximum_bytes_billed, default 30 GB
+    reads one day partition of crypto_ethereum via an explicit half-open
+    timestamp range (~0.12 GB) plus one scan of the contracts table (~4.4 GB);
+    measured at ~$0.03 total on 2026-08-13
   billable_resources: [bigquery-dataset, bigquery-table]
 
 inputs:

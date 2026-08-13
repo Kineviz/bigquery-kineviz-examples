@@ -1,9 +1,17 @@
--- Everything reachable within three hops of one package.
+-- Everything that depends on one package, up to three hops out.
 --
 -- Change the literal to any package from query 01. This is the query to run in
--- Kineviz rather than a table — the shape of the blast radius is the finding,
+-- Kineviz rather than the CLI — the shape of the blast radius is the finding,
 -- and it is much easier to see than to read.
+--
+-- BigQuery GQL cannot RETURN a path variable, so this returns each dependent
+-- with how far away it is. ARRAY_LENGTH(NODES(p)) - 1 is the hop count.
 GRAPH `${GCP_PROJECT}.${BQ_DATASET}.${BQ_GRAPH}`
-MATCH p = (root:Package WHERE root.name = 'lodash')<-[:DEPENDS_ON]-{1,3}(dependent:Package)
-RETURN p
-LIMIT 500
+MATCH p = (root:Package)<-[:DEPENDS_ON]-{1,3}(dependent:Package)
+WHERE root.name = 'lodash'
+RETURN
+  ARRAY_LENGTH(NODES(p)) - 1 AS hops,
+  dependent.name             AS dependent,
+  dependent.dependents_in_graph  AS its_own_dependents
+ORDER BY hops, its_own_dependents DESC
+LIMIT 200

@@ -3,14 +3,20 @@
 -- This is the finding a spreadsheet cannot produce. Revoking one grant feels
 -- like remediation; if a second path exists, nothing changed. Count the routes
 -- before you close the ticket.
+--
+-- GQL has no HAVING. You aggregate, then chain with NEXT and FILTER on the
+-- aggregate you just produced.
 GRAPH `${GCP_PROJECT}.${BQ_DATASET}.${BQ_GRAPH}`
-MATCH (actor:Principal)-[:CAN_IMPERSONATE]->(proxy:Principal)-[:ACCESSED]->(r:Resource)
+MATCH (actor:Principal)-[:CAN_IMPERSONATE]->(proxy:Principal)-[a:ACCESSED]->(r:Resource)
 WHERE r.sensitivity IN ('high', 'critical')
+  AND a.success_count > 0
 RETURN
-  actor.name              AS actor,
-  r.name                  AS resource,
+  actor.name               AS actor,
+  r.name                   AS resource,
   COUNT(DISTINCT proxy.id) AS distinct_routes,
   STRING_AGG(DISTINCT proxy.name, ', ') AS via
 GROUP BY actor, resource
-HAVING distinct_routes > 1
+NEXT
+FILTER distinct_routes > 1
+RETURN actor, resource, distinct_routes, via
 ORDER BY distinct_routes DESC

@@ -6,8 +6,8 @@ summary: >
 
 status: preview
 maturity_note: >
-  BigQuery Graph is pre-GA. GQL queries require an Enterprise or Enterprise Plus
-  reservation; on on-demand pricing only GRAPH_EXPAND is available.
+  BigQuery Graph is pre-GA (Google's Pre-GA Offerings Terms apply). GQL was verified
+  running on on-demand pricing with no reservation on 2026-08-13.
 last_verified: 2026-08-13
 verified_with:
   kineviz_desktop: "0.17.1"

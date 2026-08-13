@@ -17,11 +17,13 @@ generated from.
 
 ## The one that isn't cents
 
-**A BigQuery reservation.** While BigQuery Graph is pre-GA, GQL needs an Enterprise or
-Enterprise Plus reservation, and reservations bill by slot-hour whether or not you query.
-That will dwarf every other line item here.
+**A BigQuery reservation — which you probably do not need.** GQL was verified running on
+on-demand pricing with no reservation on 2026-08-13, so the demos here cost what the table
+above says. Google's docs mention an Enterprise/Enterprise Plus requirement; if your project
+turns out to enforce it, note that reservations bill by slot-hour whether or not you query,
+and would dwarf every other line item here.
 
-If you create one for a demo, delete it afterwards:
+If you do create one, delete it afterwards:
 
 ```bash
 bq rm --reservation --location=US kineviz-demo

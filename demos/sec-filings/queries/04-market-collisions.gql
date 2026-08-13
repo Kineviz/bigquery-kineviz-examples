@@ -1,10 +1,13 @@
 -- Companies converging on the same market from different starting points.
 --
 -- Two companies entering one market is where competition is about to happen but
--- has not yet shown up in the competitor disclosures. Run this in Kineviz — the
--- convergence is a shape.
+-- has not yet shown up in the competitor disclosures.
+--
+-- Returns the pair and the shared market rather than a path, which BigQuery GQL
+-- does not allow you to return.
 GRAPH `${GCP_PROJECT}.${BQ_DATASET}.${BQ_GRAPH}`
-MATCH p = (a:Company)-[:ENTERING]->(m:Market)<-[:ENTERING]-(b:Company)
+MATCH (a:Company)-[:ENTERING]->(m:Market)<-[:ENTERING]-(b:Company)
 WHERE a.id < b.id
-RETURN p
+RETURN a.id AS company_a, b.id AS company_b, m.label AS shared_market
+ORDER BY company_a, company_b
 LIMIT 150

@@ -29,10 +29,8 @@ read. If you don't have one yet, Google's
 shortest path, or run [`../demos/supply-chain-deps/`](../demos/supply-chain-deps/) which
 builds one from a public dataset.
 
-> **BigQuery Graph is pre-GA.** GQL queries require a reservation on the **Enterprise** or
-> **Enterprise Plus** edition. On on-demand pricing you can still use `GRAPH_EXPAND`, but not
-> the full GQL surface. This is the single most common reason a first connection looks broken
-> when it isn't — check it before you debug anything else.
+> **BigQuery Graph is pre-GA**, so it is covered by Google's Pre-GA Offerings Terms.
+> Verified 2026-08-13: GQL runs on **on-demand pricing with no reservation** (project in US, no capacity commitment), including variable-length path quantifiers. Google's docs mention an Enterprise/Enterprise Plus reservation requirement, so if you hit an edition or reservation error that is the cause — otherwise it does not apply to you.
 
 **3. Access.** A Google Cloud account with, at minimum:
 
@@ -195,8 +193,8 @@ with [`verify.sh`](verify.sh).
 
 **Queries fail with a reservation or edition error**
 
-GQL needs an Enterprise or Enterprise Plus reservation while BigQuery Graph is pre-GA. On
-on-demand pricing, `GRAPH_EXPAND` works but full GQL doesn't. See
+Uncommon — GQL was verified working on on-demand pricing with no reservation. If your project
+does hit this, it needs an Enterprise or Enterprise Plus reservation. See
 [BigQuery Graph](https://docs.cloud.google.com/bigquery/docs/graph-overview).
 
 **"Permission denied" with a valid key**

@@ -6,8 +6,8 @@ summary: >
 
 status: preview
 maturity_note: >
-  BigQuery Graph is pre-GA. GQL queries require an Enterprise or Enterprise Plus
-  reservation; on on-demand pricing only GRAPH_EXPAND is available.
+  BigQuery Graph is pre-GA (Google's Pre-GA Offerings Terms apply). GQL was verified
+  running on on-demand pricing with no reservation on 2026-08-13.
 last_verified: 2026-08-13
 verified_with:
   kineviz_desktop: "0.17.1"
@@ -22,10 +22,11 @@ difficulty:     beginner
 time_minutes:   12
 
 cost:
-  estimate_usd: 0.05
+  estimate_usd: 0.03
   bounded_by: >
-    setup materializes a single-ecosystem slice (~200 MB) into your own project;
-    every query sets maximum_bytes_billed, default 2 GB
+    reads one weekly deps.dev snapshot filtered to a named seed package list, so
+    BigQuery prunes by partition AND clustering (~2 GB total); aggregating to
+    find "top N packages" instead would cost ~$2.50 no matter how small N is
   billable_resources: [bigquery-dataset, bigquery-table]
 
 inputs:

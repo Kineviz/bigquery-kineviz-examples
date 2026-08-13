@@ -15,7 +15,7 @@ step "Preflight — checking prerequisites (nothing will be created)"
 [ -f "$DEMO_DIR/.env" ] || die "No .env found." \
   "cp .env.example .env, set GCP_PROJECT, then re-run. Nothing has been created yet."
 load_env "$DEMO_DIR"
-require_env GCP_PROJECT BQ_DATASET BQ_GRAPH BQ_LOCATION DEPS_SYSTEM TOP_N_PACKAGES MAX_BYTES_BILLED
+require_env GCP_PROJECT BQ_DATASET BQ_GRAPH BQ_LOCATION DEPS_SYSTEM DEPS_SNAPSHOT DEPS_SEEDS DEPS_MAX_DEPTH DEPS_PROJECT_LOOKUP_LIMIT MAX_BYTES_BILLED
 
 [ "$GCP_PROJECT" != "your-project-id" ] || die "GCP_PROJECT is still the placeholder." \
   "Set a real project ID in .env. Nothing has been created yet."
@@ -46,15 +46,30 @@ bq --project_id="$GCP_PROJECT" query --use_legacy_sql=false --format=none --quie
          "You need roles/bigquery.jobUser and roles/bigquery.dataEditor. See connect/service-account.md."
 ok "BigQuery jobs runnable"
 
-# BigQuery Graph is pre-GA: GQL needs an Enterprise reservation. This is the
-# single most common cause of a first run failing, so warn loudly and early —
-# but do not block, since GRAPH_EXPAND still works on on-demand pricing.
+# Google's docs mention an Enterprise reservation requirement for GQL while
+# BigQuery Graph is pre-GA. We verified GQL working on on-demand pricing with no
+# reservation (see docs/PREVIEW_NOTES.md), so absence of one is reported as
+# information, not a warning — and never blocks.
 if ! bq --project_id="$GCP_PROJECT" ls --reservation --location="$BQ_LOCATION" 2>/dev/null | grep -qi 'ENTERPRISE'; then
-  warn "No Enterprise/Enterprise Plus reservation found in $BQ_LOCATION."
-  dim "GQL queries need one while BigQuery Graph is pre-GA. Setup will still run,"
-  dim "but the verify step may fail. See docs/PREVIEW_NOTES.md."
+  dim "no BigQuery reservation in $BQ_LOCATION — that is fine"
+  dim "GQL was verified working on on-demand pricing; see docs/PREVIEW_NOTES.md"
 else
   ok "Enterprise reservation found in $BQ_LOCATION"
+fi
+
+# deps.dev snapshots land weekly. A date that is not a real snapshot prunes to
+# an empty partition and yields an empty graph with no error at all, so check it
+# before spending anything.
+if bq --project_id="$GCP_PROJECT" query --use_legacy_sql=false --format=csv --quiet \
+     --maximum_bytes_billed=2000000000 \
+     "SELECT 1 FROM \`bigquery-public-data.deps_dev_v1.INFORMATION_SCHEMA.PARTITIONS\`
+      WHERE table_name='Dependencies'
+        AND partition_id = FORMAT_DATE('%Y%m%d', DATE '$DEPS_SNAPSHOT')" 2>/dev/null \
+   | tail -n +2 | grep -q 1; then
+  ok "deps.dev snapshot $DEPS_SNAPSHOT exists"
+else
+  die "No deps.dev snapshot on $DEPS_SNAPSHOT." \
+      "Snapshots are weekly. List recent ones: bq query --use_legacy_sql=false \"SELECT partition_id FROM \\\`bigquery-public-data.deps_dev_v1.INFORMATION_SCHEMA.PARTITIONS\\\` WHERE table_name='Dependencies' ORDER BY partition_id DESC LIMIT 5\""
 fi
 
 if bq --project_id="$GCP_PROJECT" show --dataset "$GCP_PROJECT:$BQ_DATASET" >/dev/null 2>&1; then

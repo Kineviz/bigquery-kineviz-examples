@@ -15,8 +15,6 @@ step "Verify — running a real GQL query"
 load_env "$DEMO_DIR"
 require_env GCP_PROJECT BQ_DATASET BQ_GRAPH MAX_BYTES_BILLED
 
-err_file=$(mktemp); trap 'rm -f "$err_file"' EXIT
-
 out=$(bq --project_id="$GCP_PROJECT" query \
         --use_legacy_sql=false --format=csv --quiet \
         --maximum_bytes_billed="$MAX_BYTES_BILLED" \
@@ -24,12 +22,13 @@ out=$(bq --project_id="$GCP_PROJECT" query \
          MATCH (d:Package)-[:DEPENDS_ON]->(p:Package)
          RETURN p.name AS package, COUNT(DISTINCT d.id) AS dependents
          ORDER BY dependents DESC
-         LIMIT 5" 2>"$err_file") || {
-  e=$(tr '\n' ' ' < "$err_file")
+         LIMIT 5" 2>&1) || {
+  # bq writes query errors to stdout, not stderr, so capture both streams.
+  e=$(printf '%s' "$out" | tr '\n' ' ')
   case "$e" in
     *eservation*|*dition*|*n-demand*)
-      die "GQL rejected — this is the pre-GA reservation requirement." \
-          "BigQuery Graph needs an Enterprise or Enterprise Plus reservation for GQL. See docs/PREVIEW_NOTES.md. Your data is built; only the query is blocked." ;;
+      die "GQL rejected on edition or reservation grounds." \
+          "Uncommon — GQL was verified working on on-demand pricing. If your project does need one, add an Enterprise or Enterprise Plus reservation. Your data is built; only the query is blocked. See docs/PREVIEW_NOTES.md." ;;
     *)
       die "Verification query failed: ${e:-unknown error}" \
           "Re-run './gxr up supply-chain-deps' — setup is idempotent. If it persists, open an issue with this output." ;;

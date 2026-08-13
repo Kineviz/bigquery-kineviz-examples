@@ -38,9 +38,8 @@ ok "BigQuery jobs runnable"
 ok "data is synthetic — no public dataset is read, so setup costs a fraction of a cent"
 
 if ! bq --project_id="$GCP_PROJECT" ls --reservation --location="$BQ_LOCATION" 2>/dev/null | grep -qi 'ENTERPRISE'; then
-  warn "No Enterprise/Enterprise Plus reservation found in $BQ_LOCATION."
-  dim "GQL queries need one while BigQuery Graph is pre-GA. Setup will still run,"
-  dim "but the verify step may fail. See docs/PREVIEW_NOTES.md."
+  dim "no BigQuery reservation in $BQ_LOCATION — that is fine"
+  dim "GQL was verified working on on-demand pricing; see docs/PREVIEW_NOTES.md"
 else
   ok "Enterprise reservation found in $BQ_LOCATION"
 fi

@@ -19,16 +19,18 @@ them.
 | | |
 |---|---|
 | **Backend** | BigQuery Graph |
-| **Status** | ⚠️ Pre-GA — **GQL requires an Enterprise or Enterprise Plus reservation** |
+| **Status** | Pre-GA — GQL verified working on on-demand pricing ([details](../../docs/PREVIEW_NOTES.md)) |
 | **Connection** | Kineviz Desktop → BigQuery ([how](../../connect/)) |
 | **Dataset** | `bigquery-public-data.deps_dev_v1` — public, no download |
 | **Time** | ~12 minutes, mostly waiting on one query |
-| **Cost** | ~$0.05 — setup materializes ~200 MB into your project; every query capped at 2 GB |
+| **Cost** | ~$0.03 measured — one weekly snapshot, pruned by partition *and* clustering |
 | **You need** | A Kineviz account (free for individual use, forever), a GCP project with billing enabled |
 
-> The reservation requirement is the single most common reason a first run fails. On
-> on-demand pricing you can use `GRAPH_EXPAND` but not full GQL. Details:
-> [`docs/PREVIEW_NOTES.md`](../../docs/PREVIEW_NOTES.md).
+> **The cost dial is `DEPS_SEEDS`, not a row limit.** `deps_dev_v1.Dependencies` is 105 TB
+> across 1.19 trillion rows, clustered by `(System, Name, Version)`. Naming the packages you
+> care about keeps this at ~2 GB. Asking for "the top N packages by dependent count" instead
+> costs **~$2.50 however small N is**, because it has to aggregate the whole snapshot. That is
+> measured, not theoretical — see the header of [`sql/01_materialize.sql`](sql/01_materialize.sql).
 
 ## Architecture
 
@@ -63,9 +65,11 @@ keeps exploration fast and the cost near zero.
 
    Kineviz itself only needs **`dataViewer` + `jobUser`** to read the finished graph. The
    editor role is for building it. See [`connect/service-account.md`](../../connect/service-account.md).
-4. **An Enterprise or Enterprise Plus reservation** in your BigQuery location, while
-   BigQuery Graph is pre-GA.
-5. **`gcloud` and `bq`** — [install](https://cloud.google.com/sdk/docs/install).
+4. **`gcloud` and `bq`** — [install](https://cloud.google.com/sdk/docs/install).
+
+   No BigQuery reservation is needed: GQL was verified working on on-demand pricing on
+   2026-08-13. If you hit an edition or reservation error, see
+   [`docs/PREVIEW_NOTES.md`](../../docs/PREVIEW_NOTES.md).
 
 ## Quick start
 
@@ -98,33 +102,40 @@ bq --project_id="$GCP_PROJECT" mk --dataset --location="$BQ_LOCATION" \
    "$GCP_PROJECT:$BQ_DATASET"
 ```
 
-**3. Materialize a bounded slice of deps.dev.**
+**3. Materialize the dependency slice.**
 
 ```bash
+SEEDS_SQL=$(printf '%s' "$DEPS_SEEDS" \
+  | awk -F, '{for(i=1;i<=NF;i++){printf "%s'"'"'%s'"'"'", (i>1?",":""), $i}}')
+
 sed -e "s|\${PROJECT}|$GCP_PROJECT|g" -e "s|\${DATASET}|$BQ_DATASET|g" \
-    -e "s|\${SYSTEM}|$DEPS_SYSTEM|g" -e "s|\${TOP_N}|$TOP_N_PACKAGES|g" \
+    -e "s|\${SYSTEM}|$DEPS_SYSTEM|g" -e "s|\${SNAPSHOT}|$DEPS_SNAPSHOT|g" \
+    -e "s|\${SEEDS}|$SEEDS_SQL|g" -e "s|\${MAX_DEPTH}|$DEPS_MAX_DEPTH|g" \
     sql/01_materialize.sql \
   | bq query --project_id="$GCP_PROJECT" --use_legacy_sql=false \
       --maximum_bytes_billed="$MAX_BYTES_BILLED"
 ```
 
-[`sql/01_materialize.sql`](sql/01_materialize.sql) builds four tables — the top
-`TOP_N_PACKAGES` in one ecosystem, the dependency edges between them, the repos behind them,
-and the package→repo edges. Edges are restricted to packages already in the node table, so
-the graph is closed and every edge resolves.
+[`sql/01_materialize.sql`](sql/01_materialize.sql) builds the package nodes and dependency
+edges from your seed list.
 
-Cheaper or bigger: change `TOP_N_PACKAGES` in `.env`. **Don't raise
-`MAX_BYTES_BILLED`** — if a query exceeds the cap, lower the row count instead.
+Then [`sql/02_projects.sql`](sql/02_projects.sql) looks up the backing repos — as a
+**separate step, with the package names baked in as literals**. BigQuery only prunes a
+clustered column against literal values; `IN (SELECT ... LIMIT 150)` reads ~6.6 GB instead of
+~1 GB no matter how few rows the subquery returns. `setup.sh` does that round trip for you.
+
+Cheaper or bigger: change `DEPS_SEEDS` or `DEPS_MAX_DEPTH`. **Don't raise
+`MAX_BYTES_BILLED`.**
 
 **4. Create the property graph.**
 
 ```bash
 sed -e "s|\${PROJECT}|$GCP_PROJECT|g" -e "s|\${DATASET}|$BQ_DATASET|g" \
-    -e "s|\${GRAPH}|$BQ_GRAPH|g" sql/02_property_graph.sql \
+    -e "s|\${GRAPH}|$BQ_GRAPH|g" sql/03_property_graph.sql \
   | bq query --project_id="$GCP_PROJECT" --use_legacy_sql=false
 ```
 
-[`sql/02_property_graph.sql`](sql/02_property_graph.sql) is what Kineviz connects to.
+[`sql/03_property_graph.sql`](sql/03_property_graph.sql) is what Kineviz connects to.
 
 **5. Verify** — a real GQL query and a row count, not an assumption.
 
@@ -187,8 +198,8 @@ This is the query that most often surprises people.
 
 | Node label | Source table | Key | Properties |
 |---|---|---|---|
-| `Package` | `nodes_package` | `id` (name) | `name`, `system`, `latest_version`, `dependent_count` |
-| `Project` | `nodes_project` | `id` (repo name) | `name`, `host`, `stars`, `forks`, `open_issues`, `license` |
+| `Package` | `nodes_package` | `id` (name) | `name`, `system`, `dependents_in_graph`, `is_seed` |
+| `Project` | `nodes_project` | `id` (repo name) | `name`, `host`, `stars`, `forks`, `open_issues`, `licenses`, `description` |
 
 | Edge label | From → To | Source table | Properties |
 |---|---|---|---|
@@ -202,13 +213,22 @@ dependency, higher is transitive.
 
 **`Query requires a reservation` / an edition error**
 
-The pre-GA reservation requirement. GQL needs Enterprise or Enterprise Plus; on-demand
-pricing gets `GRAPH_EXPAND` only. Your data is already built — only the query is blocked.
-See [`docs/PREVIEW_NOTES.md`](../../docs/PREVIEW_NOTES.md).
+Uncommon — GQL was verified working on on-demand pricing with no reservation. If your project
+does hit it, your data is already built and only the query is blocked. See
+[`docs/PREVIEW_NOTES.md`](../../docs/PREVIEW_NOTES.md).
 
 **`Exceeded maximum_bytes_billed`**
 
-Working as intended. Lower `TOP_N_PACKAGES` in `.env` and re-run; don't raise the cap.
+Working as intended, and it is the guardrail that matters here — an earlier version of this
+demo would have scanned 66 TB (~$380) and this is what stopped it. Shorten `DEPS_SEEDS` or
+lower `DEPS_MAX_DEPTH`; never raise the cap.
+
+**The graph is empty but nothing errored**
+
+Almost certainly `DEPS_SNAPSHOT` is not a real snapshot date. deps.dev lands weekly, and a
+non-snapshot date prunes to an empty partition and returns nothing, silently. Preflight
+checks this; if you ran the SQL by hand, list valid dates from
+`INFORMATION_SCHEMA.PARTITIONS`.
 
 **Kineviz says the graph doesn't exist**
 
@@ -216,10 +236,7 @@ The region must match your dataset's location exactly — `US` and `us-central1`
 Check with `bq show --format=prettyjson "$GCP_PROJECT:$BQ_DATASET" | grep location`, or run
 [`connect/verify.sh`](../../connect/verify.sh), which reports the exact value to enter.
 
-**The graph is there but nearly empty**
 
-Some ecosystems are sparse at low `TOP_N_PACKAGES`. Try `DEPS_SYSTEM=NPM` with
-`TOP_N_PACKAGES=2000`.
 
 **Desktop won't sign in**
 

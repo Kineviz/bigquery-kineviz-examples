@@ -1,15 +1,20 @@
 -- Risks that more than one company discloses.
 --
 -- A risk one company names is that company's problem. A risk everyone names is
--- a sector condition — and the ones sitting in between are where the useful
--- questions are.
+-- a sector condition — and the ones in between are where the useful questions
+-- are.
+--
+-- GQL has no HAVING: aggregate, then chain with NEXT and FILTER.
 GRAPH `${GCP_PROJECT}.${BQ_DATASET}.${BQ_GRAPH}`
-MATCH (c:Company)-[:FACING]->(r:Risk)
+MATCH (c:Company)-[:FACES_RISK]->(r:Risk)
 RETURN
-  r.id                   AS risk,
-  COUNT(DISTINCT c.id)   AS companies,
+  r.label              AS risk,
+  ANY_VALUE(r.description) AS description,
+  COUNT(DISTINCT c.id) AS companies,
   STRING_AGG(DISTINCT c.id, ', ') AS named_by
 GROUP BY risk
-HAVING companies > 1
+NEXT
+FILTER companies > 1
+RETURN risk, companies, named_by
 ORDER BY companies DESC
 LIMIT 25

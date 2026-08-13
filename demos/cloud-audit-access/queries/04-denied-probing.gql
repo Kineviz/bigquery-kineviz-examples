@@ -8,9 +8,9 @@ GRAPH `${GCP_PROJECT}.${BQ_DATASET}.${BQ_GRAPH}`
 MATCH (p:Principal)-[a:ACCESSED]->(r:Resource)
 WHERE a.denied_count > 0
 RETURN
-  p.name                      AS principal,
-  COUNT(DISTINCT r.id)        AS resources_touched,
-  SUM(a.denied_count)         AS denials,
+  p.name                  AS principal,
+  COUNT(DISTINCT r.id)    AS resources_touched,
+  SUM(a.denied_count)     AS denials,
   STRING_AGG(DISTINCT r.sensitivity, ', ') AS sensitivities
 GROUP BY principal
 ORDER BY denials DESC

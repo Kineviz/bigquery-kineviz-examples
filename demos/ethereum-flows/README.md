@@ -18,7 +18,7 @@ from an address, and spot wallets that forward almost everything they receive.
 | | |
 |---|---|
 | **Backend** | BigQuery Graph |
-| **Status** | ⚠️ Pre-GA — **GQL requires an Enterprise or Enterprise Plus reservation** |
+| **Status** | Pre-GA — GQL verified working on on-demand pricing ([details](../../docs/PREVIEW_NOTES.md)) |
 | **Connection** | Kineviz Desktop → BigQuery Property Graph ([how](../../connect/)) |
 | **Dataset** | `bigquery-public-data.crypto_ethereum` — public, no download |
 | **Time** | ~15 minutes, mostly one materialization query |
@@ -60,9 +60,11 @@ from an address, and spot wallets that forward almost everything they receive.
    - [`roles/bigquery.dataEditor`](https://cloud.google.com/bigquery/docs/access-control#bigquery.dataEditor) — create the demo dataset
 
    Kineviz itself only needs `dataViewer` + `jobUser` to read the finished graph.
-4. **An Enterprise or Enterprise Plus reservation** in your BigQuery location, while
-   BigQuery Graph is pre-GA.
-5. **`gcloud` and `bq`** — [install](https://cloud.google.com/sdk/docs/install).
+4. **`gcloud` and `bq`** — [install](https://cloud.google.com/sdk/docs/install).
+
+   No BigQuery reservation is needed: GQL was verified working on on-demand pricing on
+   2026-08-13. If you hit an edition or reservation error, see
+   [`docs/PREVIEW_NOTES.md`](../../docs/PREVIEW_NOTES.md).
 
 ## Quick start
 
@@ -220,7 +222,8 @@ with a real address from query 01.
 
 **A reservation or edition error**
 
-The pre-GA reservation requirement. See [`docs/PREVIEW_NOTES.md`](../../docs/PREVIEW_NOTES.md).
+Uncommon — GQL was verified working on on-demand pricing. See
+[`docs/PREVIEW_NOTES.md`](../../docs/PREVIEW_NOTES.md) if you hit it.
 
 ## Clean up
 

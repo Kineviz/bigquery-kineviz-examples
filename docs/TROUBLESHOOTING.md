@@ -45,8 +45,9 @@ that *owns the dataset*, which isn't always the project the key was created in.
 
 ## Queries
 
-**A reservation or edition error.** BigQuery Graph is pre-GA and GQL needs an Enterprise or
-Enterprise Plus reservation. See [PREVIEW_NOTES.md](PREVIEW_NOTES.md).
+**A reservation or edition error.** Uncommon — GQL was verified working on on-demand
+pricing with no reservation. If your project does enforce it, see
+[PREVIEW_NOTES.md](PREVIEW_NOTES.md).
 
 **`Exceeded maximum_bytes_billed`.** Working as designed. Reduce the amount of data — lower
 `TOP_N_PACKAGES` or similar in `.env` — rather than raising the cap. If a demo's default

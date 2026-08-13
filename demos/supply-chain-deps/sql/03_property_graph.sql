@@ -8,12 +8,12 @@ CREATE OR REPLACE PROPERTY GRAPH `${PROJECT}.${DATASET}.${GRAPH}`
     `${PROJECT}.${DATASET}.nodes_package`
       KEY (id)
       LABEL Package
-      PROPERTIES (id, name, system, latest_version, dependent_count),
+      PROPERTIES (id, name, system, dependents_in_graph, is_seed),
 
     `${PROJECT}.${DATASET}.nodes_project`
       KEY (id)
       LABEL Project
-      PROPERTIES (id, name, host, stars, forks, open_issues, license)
+      PROPERTIES (id, name, host, stars, forks, open_issues, licenses, description)
   )
   EDGE TABLES (
     `${PROJECT}.${DATASET}.edges_depends_on`
