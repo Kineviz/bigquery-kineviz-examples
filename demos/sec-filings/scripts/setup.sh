@@ -84,6 +84,22 @@ info "processing: $SEC_TICKERS"
 UPSTREAM_GCS="gs://${GCS_BUCKET}/kineviz-sec-demo"
 info "staging to $UPSTREAM_GCS"
 
+# Pre-create the json/ prefix, or the FIRST run always fails.
+#
+# Upstream uploads with:   gcloud storage cp --recursive data/json/* "$GCS_BUCKET/json"
+# and later loads from:    $GCS_BUCKET/json/<TICKER>/<YEAR>/sections.jsonl
+#
+# `gcloud storage cp --recursive SRC DST` copies SRC *as* DST when DST does not
+# exist, and *into* DST when it does. On a clean bucket, data/json/AAPL therefore
+# becomes json/ itself and the files land at json/2025/sections.jsonl — one level
+# short — so the load 404s. Re-running succeeds, because by then json/ exists.
+#
+# That is why this demo appeared "flaky": it failed on every genuinely clean run
+# and worked on every retry. Creating the prefix first makes the first run behave
+# like the second. Reported upstream.
+printf '' | gcloud storage cp - "${UPSTREAM_GCS}/json/.keep" --quiet 2>/dev/null \
+  || warn "could not pre-create ${UPSTREAM_GCS}/json/ — the first run may need a retry"
+
 (
   cd "$WORK"
   GCP_PROJECT="$GCP_PROJECT" \

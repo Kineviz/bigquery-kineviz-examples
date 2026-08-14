@@ -239,15 +239,25 @@ nothing, check the labels that pipeline produces at the pinned commit.
 The most common failure, and the reason preflight checks it. The remediation it prints
 includes the exact `bq mk --connection` and IAM commands.
 
-**The pipeline fails partway through, then works on a re-run**
+**`404 Not found: URI gs://…/json/<TICKER>/<YEAR>/sections.jsonl`**
 
-Observed: one run failed at the "loading sections into BigQuery" step and the identical
-re-run succeeded, with nothing changed. This pipeline touches SEC EDGAR, GCS, BigQuery and
-Vertex AI in sequence, so a transient failure in any of them stops it.
+A genuine first-run bug in the upstream pipeline, which `setup.sh` now works around — you
+should not see it, but here is what it was.
+
+Upstream uploads with `gcloud storage cp --recursive data/json/* "$GCS_BUCKET/json"` and
+later loads from `$GCS_BUCKET/json/<TICKER>/<YEAR>/sections.jsonl`. `cp --recursive` copies
+the source *as* the destination when the destination does not exist, and *into* it when it
+does. So on a clean bucket `data/json/AAPL` became `json/` itself, the files landed one level
+too shallow, and the load 404'd — while any retry succeeded, because by then `json/` existed.
+
+It looked like flakiness and was actually deterministic: **every clean first run failed,
+every retry worked.** `setup.sh` now creates the `json/` prefix before invoking the pipeline.
+
+**The pipeline fails partway through for some other reason**
 
 Re-run `./scripts/setup.sh`. It is safe to repeat — every step is idempotent and the upstream
 pipeline checkpoints already-processed filings rather than redoing them, so a retry costs
-little and does not re-bill the Gemini extraction it already completed.
+little and does not re-bill extraction it already completed.
 
 **`ModuleNotFoundError: No module named 'google'`**
 
