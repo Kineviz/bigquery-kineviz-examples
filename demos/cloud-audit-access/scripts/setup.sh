@@ -51,9 +51,16 @@ render() {
       -e "s|\${DATASET}|$BQ_DATASET|g" \
       -e "s|\${GRAPH}|$BQ_GRAPH|g" "$1"
 }
+# bq echoes every statement it runs, which buries the actual progress output.
+# Capture it and surface it only when something fails.
 run_sql() {
-  bq --project_id="$GCP_PROJECT" query --use_legacy_sql=false --quiet --format=none \
-     --maximum_bytes_billed="$MAX_BYTES_BILLED" < "$1"
+  local out
+  if ! out=$(bq --project_id="$GCP_PROJECT" query --use_legacy_sql=false --quiet \
+       --format=none --maximum_bytes_billed="$MAX_BYTES_BILLED" < "$1" 2>&1); then
+    printf '%s\n' "$out" >&2
+    return 1
+  fi
+  return 0
 }
 
 tmp=$(mktemp); trap 'rm -f "$tmp"' EXIT

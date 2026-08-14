@@ -23,10 +23,17 @@ render() {
       "$1"
 }
 
+# bq echoes every statement it runs, which buries the actual progress output.
+# Capture it and surface it only when something fails.
 run_sql() {
-  bq --project_id="$GCP_PROJECT" query \
-     --use_legacy_sql=false --quiet --format=none \
-     --maximum_bytes_billed="$MAX_BYTES_BILLED" < "$1"
+  local out
+  if ! out=$(bq --project_id="$GCP_PROJECT" query \
+       --use_legacy_sql=false --quiet --format=none \
+       --maximum_bytes_billed="$MAX_BYTES_BILLED" < "$1" 2>&1); then
+    printf '%s\n' "$out" >&2
+    return 1
+  fi
+  return 0
 }
 
 if bq --project_id="$GCP_PROJECT" show --dataset "$GCP_PROJECT:$BQ_DATASET" >/dev/null 2>&1; then

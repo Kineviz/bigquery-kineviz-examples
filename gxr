@@ -83,7 +83,14 @@ run_step() {
       "This demo is incomplete. Please open an issue."
     return 0
   fi
-  GXR_STEP="$id" "$script" ${GXR_JSON:+--json}
+  # NOT ${GXR_JSON:+--json}: common.sh defaults GXR_JSON to the STRING "0",
+  # and :+ tests set-and-non-empty rather than truthiness, so that form passed
+  # --json on every run and every `gxr up` emitted machine output to humans.
+  if [ "$GXR_JSON" = 1 ]; then
+    GXR_STEP="$id" "$script" --json
+  else
+    GXR_STEP="$id" "$script"
+  fi
 }
 
 cmd_up() {
