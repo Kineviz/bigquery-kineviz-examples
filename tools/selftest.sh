@@ -199,6 +199,14 @@ for d in $(demos); do
   if grep -q 'gs://' "$d/demo.yaml" && ! grep -q 'gsutil.*rm' "$t"; then
     bad "$slug teardown: demo.yaml declares GCS objects but teardown does not remove them"
   fi
+  if grep -q 'spanner://' "$d/demo.yaml" && ! grep -q 'spanner databases delete' "$t"; then
+    bad "$slug teardown: demo.yaml declares a Spanner database but teardown does not drop it"
+  fi
+  # A Spanner instance can hold other people's databases and is the thing that
+  # bills. Deleting one to clean up a demo is never acceptable.
+  if grep -q 'spanner instances delete' "$t"; then
+    bad "$slug teardown: deletes a Spanner INSTANCE" "drop only the database this demo created"
+  fi
 done
 
 # ---------------------------------------------------------------------------
