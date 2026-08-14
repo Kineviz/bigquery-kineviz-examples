@@ -5,6 +5,9 @@
 *credentials*.json
 service-account*.json
 
+# Local docs preview (tools/preview.sh)
+.preview/
+
 # Demo scratch
 data/generated/
 *.log
