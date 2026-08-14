@@ -239,10 +239,15 @@ nothing, check the labels that pipeline produces at the pinned commit.
 The most common failure, and the reason preflight checks it. The remediation it prints
 includes the exact `bq mk --connection` and IAM commands.
 
-**The pipeline fails partway through extraction**
+**The pipeline fails partway through, then works on a re-run**
 
-Re-run `./scripts/setup.sh` — it's safe to repeat, and the upstream pipeline checkpoints
-already-processed filings rather than redoing them.
+Observed: one run failed at the "loading sections into BigQuery" step and the identical
+re-run succeeded, with nothing changed. This pipeline touches SEC EDGAR, GCS, BigQuery and
+Vertex AI in sequence, so a transient failure in any of them stops it.
+
+Re-run `./scripts/setup.sh`. It is safe to repeat — every step is idempotent and the upstream
+pipeline checkpoints already-processed filings rather than redoing them, so a retry costs
+little and does not re-bill the Gemini extraction it already completed.
 
 **`ModuleNotFoundError: No module named 'google'`**
 
