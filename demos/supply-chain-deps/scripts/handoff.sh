@@ -17,7 +17,7 @@ cat <<EOF
 ✅ Demo ready: supply-chain-deps
    Kineviz (formerly GraphXR)
 
-   Dataset:   ${GCP_PROJECT}.${BQ_DATASET}   (${DEPS_SYSTEM}, top ${TOP_N_PACKAGES} packages)
+   Dataset:   ${GCP_PROJECT}.${BQ_DATASET}   (${DEPS_SYSTEM}, seeds: ${DEPS_SEEDS})
    Graph:     ${BQ_GRAPH} — 2 node labels (Package, Project), 2 edge labels
    Verified:  GQL query returned ${rows} row(s)
    Desktop:   ${desktop}
