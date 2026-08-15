@@ -1,0 +1,14 @@
+-- CANVAS VERSION — paste into the Kineviz Query panel and Run.
+-- The canvas translator has no GROUP BY / NEXT / FILTER, so "more than
+-- one route" is expressed as a self-join instead: two comma-joined
+-- patterns from the same actor to the same resource through two
+-- DIFFERENT proxies. Any match = at least 2 distinct routes, and both
+-- routes are drawn.
+GRAPH `${GCP_PROJECT}.${BQ_DATASET}.${BQ_GRAPH}`
+MATCH (actor:Principal)-[ci1:CAN_IMPERSONATE]->(p1:Principal)-[a1:ACCESSED]->(r:Resource),
+      (actor)-[ci2:CAN_IMPERSONATE]->(p2:Principal)-[a2:ACCESSED]->(r)
+WHERE p1.id <> p2.id
+  AND r.sensitivity IN ('high', 'critical')
+  AND a1.success_count > 0
+  AND a2.success_count > 0
+RETURN *

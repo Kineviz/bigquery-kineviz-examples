@@ -161,26 +161,132 @@ Values for this demo:
 Four questions, in [`queries/`](queries/). **Start with `01`** — it's the query this demo
 exists for.
 
+The GQL below is the **canvas** form: it ends in `RETURN *`, so the matched subgraph lands on
+the Kineviz canvas as nodes and edges instead of coming back as a table. Paste it into the
+Query panel and hit Run — the panel already knows which graph you're connected to, so these
+start straight at `MATCH`. Each question also ships a table version in
+[`queries/`](queries/), which does need a `GRAPH` line because `bq` has no such context.
+
 **1. Who reaches sensitive data only by impersonation?** —
-[`01-escalation-paths.gql`](queries/01-escalation-paths.gql)
+[`01-escalationpaths.canvas.gql`](queries/01-escalationpaths.canvas.gql)
+
+```sql
+MATCH (actor:Principal)-[ci:CAN_IMPERSONATE]->(proxy:Principal)-[a:ACCESSED]->(r:Resource)
+WHERE r.sensitivity IN ('high', 'critical')
+  AND a.success_count > 0
+RETURN *
+```
 
 Principals that touch nothing sensitive directly but reach it through something that can. An
 access review built on direct grants shows these people as harmless.
 
-**2. One principal's blast radius** — [`02-blast-radius.gql`](queries/02-blast-radius.gql)
+The table version adds a `NOT EXISTS` block excluding actors who already hold direct sensitive
+access. The canvas translator doesn't take subqueries, so the canvas form leaves it out — on
+this seeded dataset that changes nothing, because the three principals with direct sensitive
+access (`sa-etl-runner@`, `sa-secrets-reader@`, `sa-backup-agent@`) never appear as
+impersonation actors. Run [`01-escalation-paths.gql`](queries/01-escalation-paths.gql) when
+you need the exact semantics.
 
-**Run this in Kineviz, not the CLI.** "How far does this account actually reach" is a shape,
-and "should we offboard this contractor first" is usually obvious on sight.
+![Escalation paths on the Kineviz canvas: contractor-priya reaches gs://acme-customer-pii through two different service accounts, and a service-account chain reaches the Stripe live key](img/escalation-paths.png)
+
+Resources are coloured by `sensitivity` — red for `critical`, orange for `high` — and the
+orange edges are `CAN_IMPERSONATE`, the grey ones `ACCESSED`. That colouring is what makes the
+finding legible: every principal in the picture is grey, so nobody holds direct access to
+anything sensitive. The reach is entirely in the orange edges.
+
+Two shapes stand out. `contractor-priya@partner.example` arrives at
+`gs://acme-customer-pii` twice, once via `sa-etl-runner@` and once via `sa-backup-agent@` —
+revoke either grant on its own and the path survives. And along the bottom,
+`sa-ci-deployer@` → `sa-secrets-reader@` → `secret://acme-prod/stripe-live-key` is a chain
+with no human anywhere in it, which is why a user access review never surfaces it.
+
+**2. One principal's blast radius** —
+[`02-blastradius.canvas.gql`](queries/02-blastradius.canvas.gql)
+
+**This is the one to run in Kineviz rather than the CLI.** "How far does this account actually
+reach" is a shape, and "should we offboard this contractor first" is usually obvious on sight.
+
+Run the three blocks **separately**. The canvas accumulates results, so the union of the three
+runs is the blast radius — one block per impersonation depth.
+
+```sql
+-- Block 1 · direct access, no impersonation
+MATCH (start:Principal)-[a:ACCESSED]->(r:Resource)
+WHERE start.name = 'contractor-priya@partner.example'
+  AND a.success_count > 0
+RETURN *
+
+-- Block 2 · one impersonation hop
+MATCH (start:Principal)-[ci1:CAN_IMPERSONATE]->(v1:Principal)-[a:ACCESSED]->(r:Resource)
+WHERE start.name = 'contractor-priya@partner.example'
+  AND a.success_count > 0
+RETURN *
+
+-- Block 3 · two impersonation hops
+MATCH (start:Principal)-[ci1:CAN_IMPERSONATE]->(v1:Principal)-[ci2:CAN_IMPERSONATE]->(v2:Principal)-[a:ACCESSED]->(r:Resource)
+WHERE start.name = 'contractor-priya@partner.example'
+  AND a.success_count > 0
+RETURN *
+```
+
+Swap the name for anyone from question 1.
+
+**Block 3 returns nothing for `contractor-priya@partner.example`, and that is the correct
+answer** — she reaches everything in a single impersonation hop, so there is no two-hop
+pattern to match. Her blast radius is entirely in blocks 1 and 2. The same is true of
+`sa-ci-deployer@`: its route to `secret://acme-prod/stripe-live-key` is one hop through
+`sa-secrets-reader@`, not two.
+
+The only two-hop chains in this dataset belong to `aisha@acme.example` and
+`james@acme.example`, both through `marcus@acme.example` and out to `grace@` or `tom@`. Use
+one of those names to see block 3 return something:
+
+```sql
+MATCH (start:Principal)-[ci1:CAN_IMPERSONATE]->(v1:Principal)-[ci2:CAN_IMPERSONATE]->(v2:Principal)-[a:ACCESSED]->(r:Resource)
+WHERE start.name = 'aisha@acme.example'
+  AND a.success_count > 0
+RETURN *
+```
+
+Worth noticing what comes back: those chains reach only `low` and `medium` resources —
+`bq://acme-prod.billing`, `gs://acme-analytics-export`, `bq://acme-prod.telemetry`. Nothing
+sensitive is two hops away in this dataset. The escalation risk is all in the one-hop paths,
+which is why question 1 finds it without needing depth.
 
 **3. Resources reachable by more than one route** —
-[`03-redundant-paths.gql`](queries/03-redundant-paths.gql)
+[`03-redundantpaths.canvas.gql`](queries/03-redundantpaths.canvas.gql)
 
 The finding a spreadsheet can't produce. Revoking one grant feels like remediation; if a
 second path exists, nothing changed.
 
-**4. Who's accumulating denials?** — [`04-denied-probing.gql`](queries/04-denied-probing.gql)
+```sql
+MATCH (actor:Principal)-[ci1:CAN_IMPERSONATE]->(p1:Principal)-[a1:ACCESSED]->(r:Resource),
+      (actor)-[ci2:CAN_IMPERSONATE]->(p2:Principal)-[a2:ACCESSED]->(r)
+WHERE p1.id <> p2.id
+  AND r.sensitivity IN ('high', 'critical')
+  AND a1.success_count > 0
+  AND a2.success_count > 0
+RETURN *
+```
+
+Two comma-joined patterns from the same actor to the same resource through two *different*
+proxies. Any match is at least two distinct routes, and both routes get drawn — which is the
+advantage over the table version's count.
+
+**4. Who's accumulating denials?** —
+[`04-deniedprobing.canvas.gql`](queries/04-deniedprobing.canvas.gql)
 
 Usually a broken job. Sometimes someone finding out what they can reach.
+
+```sql
+MATCH (p:Principal)-[a:ACCESSED]->(r:Resource)
+WHERE a.denied_count > 0
+RETURN *
+```
+
+Every principal→resource edge carrying denials. The pattern the table can only count is
+visible directly here: denials fanned across many resources reads as probing, many against one
+reads as a broken job. Read `denied_count` on the edges.
 
 ### What you should find
 

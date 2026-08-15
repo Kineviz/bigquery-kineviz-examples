@@ -145,28 +145,64 @@ sed -e "s|\${PROJECT}|$GCP_PROJECT|g" -e "s|\${DATASET}|$BQ_DATASET|g" \
 
 ## Connect Kineviz
 
-The walkthrough with screenshots is in **[`connect/`](../../connect/)** — the same flow for
-every demo here, so it's documented once.
+`gxr up` stops here on purpose. Three things are left, and all three are yours — nothing can
+create a Kineviz account, install Desktop, or sign in on your behalf.
 
+**1. Make a read-only key.** Kineviz reads and should not be able to write, so grant
+`dataViewer` + `jobUser` only — not `bigquery.admin`, not `editor`. The `dataEditor` role you
+used to *build* the graph is not the one Kineviz should connect with.
+
+```bash
+set -a; . .env; set +a
+
+gcloud iam service-accounts create kineviz-reader \
+  --project="$GCP_PROJECT" --display-name="Kineviz read-only"
+
+for role in roles/bigquery.dataViewer roles/bigquery.jobUser; do
+  gcloud projects add-iam-policy-binding "$GCP_PROJECT" \
+    --member="serviceAccount:kineviz-reader@${GCP_PROJECT}.iam.gserviceaccount.com" \
+    --role="$role" --condition=None --quiet
+done
+
+mkdir -p .gcp && chmod 700 .gcp
+gcloud iam service-accounts keys create .gcp/key.json \
+  --project="$GCP_PROJECT" \
+  --iam-account="kineviz-reader@${GCP_PROJECT}.iam.gserviceaccount.com"
+chmod 600 .gcp/key.json
+```
+
+Rotation, dataset-scoped grants, and how to avoid keys entirely on a GCE VM:
+[`connect/service-account.md`](../../connect/service-account.md).
+
+**2. Install Desktop and sign in.**
+[Releases](https://github.com/Kineviz/kineviz-desktop/releases) — v0.17.1 or later. Free for
+individual use, forever, but the app requires an account.
+
+**3. Connect.** The dialog-by-dialog walkthrough with screenshots is in
+**[`connect/`](../../connect/)** — the same flow for every demo here, so it's documented once.
 Values for this demo:
 
 | Field | Value |
 |---|---|
 | Database Type | `BigQuery Property Graph` |
-| Upload Service Account | your service account JSON ([how to make one](../../connect/service-account.md)) |
+| Upload Service Account | `.gcp/key.json` from step 1 |
 | Select Database | `kineviz_deps_demo` |
 | Select location (Optional) | your `BQ_LOCATION` (default `US`) |
 | Select Graph Database | `DepsGraph` |
 
+The canvas opens empty. Hit **Search**, pick the `Package` label, and run it to pull your
+first nodes — then go to [Explore](#explore).
+
 ## Explore
 
-Four questions, in [`queries/`](queries/). Run them in Kineviz's query panel.
+Four questions, in [`queries/`](queries/). Run them in Kineviz's query panel — it already
+knows which graph you're connected to, so these start straight at `MATCH`. The `.gql` files
+carry a `GRAPH` line for running the same queries through `bq`, which has no such context.
 
 **1. Which packages does the most of this ecosystem depend on?** —
 [`01-fan-in.gql`](queries/01-fan-in.gql)
 
 ```sql
-GRAPH `PROJECT.kineviz_deps_demo.DepsGraph`
 MATCH (dependent:Package)-[:DEPENDS_ON]->(p:Package)
 RETURN p.name AS package, COUNT(DISTINCT dependent.id) AS dependents
 ORDER BY dependents DESC
@@ -193,6 +229,62 @@ the result is the finding, and it's far easier to see than to read.
 
 Depending on three packages from the same repo is one point of failure wearing three names.
 This is the query that most often surprises people.
+
+## Just ask
+
+Kineviz has an agent panel that takes plain English, so you don't have to write GQL to explore
+this graph. Two questions worth starting with, and what each one actually gives back.
+
+### "Show the dependency tree for package 'lodash'"
+
+<!-- TODO: canvas screenshot of the expanded lodash neighborhood -> img/lodash-tree.png -->
+
+The canvas fills with **383 packages and 495 dependency edges** — lodash plus everything
+within three hops of it, captioned by name and laid out so the clusters separate.
+
+Then read the arrows, because the answer is the surprising part: **lodash depends on nothing.**
+Every one of its connections points *inward*. `eslint` depends on it directly; `webpack` and
+`next` reach it in two hops. That is correct, not a gap in the data — lodash famously ships
+with no runtime dependencies of its own.
+
+So for a package like this, "what does it depend on?" is the wrong question and comes back
+empty. **"What breaks if this breaks?"** is the one the graph answers, and it's why
+[`03-transitive-blast-radius.gql`](queries/03-transitive-blast-radius.gql) follows dependencies
+*backwards* from the package you name. Ask about a leaf in the outward direction and you'll
+think the graph is broken.
+
+### "Which packages have the most open issues in their projects?"
+
+<!-- TODO: chart screenshot of packages by open issues -> img/open-issues.png -->
+
+A ranked table, and it charts cleanly:
+
+| Package | Repository | Open issues | Stars |
+|---|---|---|---|
+| `typescript` | microsoft/typescript | 5,077 | 110K |
+| `next` | vercel/next.js | 4,380 | 142K |
+| `react` | facebook/react | 1,253 | 247K |
+| `vue` | vuejs/core | 897 | 54K |
+| `vite` | vuejs/vite | 770 | 82K |
+| `@babel/parser` | babel/babel | 765 | 44K |
+| `rollup` | rollup/rollup | 606 | 26K |
+| `express` | strongloop/express | 228 | 69K |
+
+Read it as *activity*, not risk — these are the busiest repos in the slice, and a big issue
+count on a 110K-star project is a sign of life. The risk question is the inverse, and it's
+[`02-bus-factor.gql`](queries/02-bus-factor.gql): heavy fan-in paired with a *quiet* repo.
+
+One wrinkle to know about: some packages resolve to more than one repository — `next` also
+appears under `zeit/next.js`, `vite` under both `vuejs/vite` and `vitejs/vite`. deps.dev keeps
+repo identities across renames and moves, so dedupe on package before treating these as counts.
+
+### Other questions that land well
+
+- *"What's connected to `express`?"* — pulls its neighborhood onto the canvas
+- *"Which repos back more than one package here?"* — the shared-repo finding, one point of
+  failure wearing several names
+- *"Colour the packages by ecosystem and lay them out"* — styling and layout are part of what
+  the panel does, not a separate step
 
 ## How the graph is modeled
 
@@ -236,7 +328,38 @@ The region must match your dataset's location exactly — `US` and `us-central1`
 Check with `bq show --format=prettyjson "$GCP_PROJECT:$BQ_DATASET" | grep location`, or run
 [`connect/verify.sh`](../../connect/verify.sh), which reports the exact value to enter.
 
+**Preflight says `Cannot access project` and the ID is definitely right**
 
+Your credentials expired. Some org policies force periodic reauth, and the refresh can't
+prompt from a non-interactive shell — so a live token and a dead one look identical to
+preflight, which reports both as a project-access failure.
+
+```bash
+gcloud projects describe "$GCP_PROJECT"   # says "Reauthentication failed"? then:
+gcloud auth login
+```
+
+**Preflight says `Cannot run BigQuery jobs` but your IAM is correct**
+
+Check that `bq` runs at all before chasing roles — preflight discards its stderr, so a `bq`
+that crashes on startup is indistinguishable from one that was denied permission.
+
+```bash
+bq version
+```
+
+A `Traceback` with `ImportError: cannot import name 'bq_error' from 'utils'` means something
+on your `PYTHONPATH` is shadowing `bq`'s own modules. The usual cause is an editable install
+(`pip install -e`) whose `.pth` file appends a `src/` directory containing generically-named
+top-level packages — `utils`, `config`, `models` — to `sys.path` for *every* process using
+that interpreter. Point the SDK at a clean one:
+
+```bash
+export CLOUDSDK_PYTHON=/opt/homebrew/bin/python3.13   # any 3.10+ without the .pth
+```
+
+Add it to your shell profile to make it stick. The durable fix is repackaging the offending
+project so it exports `yourpkg.utils` rather than a bare `utils`.
 
 **Desktop won't sign in**
 
