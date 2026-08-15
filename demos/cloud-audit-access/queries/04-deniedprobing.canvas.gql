@@ -1,0 +1,10 @@
+-- CANVAS VERSION — paste into the Kineviz Query panel and Run.
+-- Draws every principal→resource edge that carries denials. The pattern
+-- the table can only count is visible directly: many denials fanned
+-- across many resources (probing) vs many against one (a broken job).
+-- Aggregates (SUM, COUNT, STRING_AGG) are dropped — read denied_count
+-- on the edges, or run the original 04 for the ranked table.
+GRAPH `${GCP_PROJECT}.${BQ_DATASET}.${BQ_GRAPH}`
+MATCH (p:Principal)-[a:ACCESSED]->(r:Resource)
+WHERE a.denied_count > 0
+RETURN *

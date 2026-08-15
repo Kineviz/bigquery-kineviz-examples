@@ -1,0 +1,15 @@
+-- CANVAS VERSION — paste into the Kineviz Query panel and Run.
+-- Returns the matched subgraph (RETURN *) so nodes and edges land on the
+-- canvas instead of a table.
+--
+-- Difference vs the original: the canvas translator does not support
+-- NOT EXISTS subqueries, so the "actor has no DIRECT sensitive access"
+-- exclusion is dropped. On this seeded dataset that changes nothing —
+-- verified: the three principals with direct sensitive access
+-- (sa-etl-runner@, sa-secrets-reader@, sa-backup-agent@) never appear as
+-- impersonation actors. For exact semantics, run the original 01 (table).
+GRAPH `${GCP_PROJECT}.${BQ_DATASET}.${BQ_GRAPH}`
+MATCH (actor:Principal)-[ci:CAN_IMPERSONATE]->(proxy:Principal)-[a:ACCESSED]->(r:Resource)
+WHERE r.sensitivity IN ('high', 'critical')
+  AND a.success_count > 0
+RETURN *

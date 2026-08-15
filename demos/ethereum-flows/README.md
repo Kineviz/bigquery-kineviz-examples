@@ -150,10 +150,13 @@ Four questions, in [`queries/`](queries/). **Start with `01`** — it gives you 
 to paste into `02`, and tells you which hubs are just exchanges so you don't over-read a path
 running through one.
 
+Run them in Kineviz's query panel — it already knows which graph you're connected to, so these
+start straight at `MATCH`. The `.gql` files carry a `GRAPH` line for running the same queries
+through `bq`, which has no such context.
+
 **1. Where does value concentrate?** — [`01-value-hubs.gql`](queries/01-value-hubs.gql)
 
 ```sql
-GRAPH `PROJECT.kineviz_eth_demo.EthGraph`
 MATCH (sender:Address)-[s:SENT]->(hub:Address)
 RETURN hub.address AS hub, COUNT(DISTINCT sender.id) AS distinct_senders,
        SUM(s.total_eth) AS eth_received

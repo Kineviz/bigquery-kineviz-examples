@@ -1,0 +1,32 @@
+-- CANVAS VERSION — run each block SEPARATELY (the canvas accumulates
+-- results, so the union of the three runs is the blast radius).
+-- The canvas translator does not support quantified paths (->{0,2}),
+-- so the 0/1/2-hop cases are unrolled into three queries.
+-- Swap the name for anyone from query 01.
+
+-- Block 1: direct access (0 impersonation hops)
+GRAPH `${GCP_PROJECT}.${BQ_DATASET}.${BQ_GRAPH}`
+MATCH (start:Principal)-[a:ACCESSED]->(r:Resource)
+WHERE start.name = 'contractor-priya@partner.example'
+  AND a.success_count > 0
+RETURN *
+
+-- Block 2: one impersonation hop
+GRAPH `${GCP_PROJECT}.${BQ_DATASET}.${BQ_GRAPH}`
+MATCH (start:Principal)-[ci1:CAN_IMPERSONATE]->(v1:Principal)-[a:ACCESSED]->(r:Resource)
+WHERE start.name = 'contractor-priya@partner.example'
+  AND a.success_count > 0
+RETURN *
+
+-- Block 3: two impersonation hops
+-- Empty for contractor-priya, and that is the correct answer — she reaches
+-- everything in one hop. Same for sa-ci-deployer@: its route to the Stripe
+-- key is one hop through sa-secrets-reader@, not two.
+-- The only two-hop chains here are aisha@ and james@, both via marcus@.
+-- Swap the name to one of those to see this block return rows. Verified
+-- 2026-08-14: no two-hop chain reaches a high/critical resource.
+GRAPH `${GCP_PROJECT}.${BQ_DATASET}.${BQ_GRAPH}`
+MATCH (start:Principal)-[ci1:CAN_IMPERSONATE]->(v1:Principal)-[ci2:CAN_IMPERSONATE]->(v2:Principal)-[a:ACCESSED]->(r:Resource)
+WHERE start.name = 'contractor-priya@partner.example'
+  AND a.success_count > 0
+RETURN *
