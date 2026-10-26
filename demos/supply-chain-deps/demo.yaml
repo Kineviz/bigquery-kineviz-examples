@@ -43,7 +43,7 @@ requires:
   apis: [bigquery.googleapis.com]
   iam:  ["roles/bigquery.jobUser", "roles/bigquery.dataEditor"]
   reservation: "enterprise"
-  kineviz_desktop: ">=0.17.1"
+  kineviz_desktop: ">=3.33.0"
   kineviz_account: true
 
 steps:
